@@ -1,0 +1,73 @@
+  METHOD costcenters_get_entityset.
+    DATA: lt_filter_select_options TYPE /iwbep/t_mgw_select_option,
+          ls_filter                TYPE /iwbep/s_mgw_select_option,
+          ls_select_option         TYPE /iwbep/s_cod_select_option,
+          lv_plant                 TYPE werks_d,
+          lv_search_string         TYPE string,
+          ltr_cc_name              TYPE RANGE OF mctxt,
+          lsr_cc_name              LIKE LINE OF ltr_cc_name,
+          lv_top                   TYPE i,
+          lv_skip                  TYPE i,
+          lv_total                 TYPE i,
+          lv_start_from            TYPE i,
+          lv_message               TYPE string,
+          lv_company_code          TYPE bukrs.
+
+    DATA: BEGIN OF ls_cost_center,
+            kost1 TYPE kostl,
+            mctxt TYPE mcds3,
+          END OF ls_cost_center,
+          ls_entity TYPE /cis2pr11/cl_pr_mpc=>ts_costcenter.
+
+    "Get Plant filter (mandatory)
+    lt_filter_select_options = io_tech_request_context->get_filter( )->get_filter_select_options( ).
+    READ TABLE lt_filter_select_options INTO ls_filter WITH KEY property = 'PLANT'.
+    IF sy-subrc EQ 0.
+      READ TABLE ls_filter-select_options INTO ls_select_option INDEX 1.
+      lv_plant = ls_select_option-low.
+    ELSE.
+      MESSAGE e001(/cis2pr11/messages) INTO lv_message WITH sy-uname.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = lv_message.
+    ENDIF.
+
+    "Get search term if any
+    lv_search_string = io_tech_request_context->get_search_string( ).
+    "Create a range table to be used in a SELECT statement.
+    IF lv_search_string IS NOT INITIAL.
+      TRANSLATE lv_search_string TO UPPER CASE.
+      CONCATENATE '*'  lv_search_string '*' INTO lsr_cc_name-low.
+      lsr_cc_name-option = 'CP'.
+      lsr_cc_name-sign = 'I'.
+      APPEND lsr_cc_name TO ltr_cc_name.
+    ENDIF.
+
+    "Pagination
+    lv_top = io_tech_request_context->get_top( ).
+    IF lv_top EQ 0.
+      lv_top = 100. "If $top was not sent, send maximum 100 rows
+    ENDIF.
+    lv_skip = io_tech_request_context->get_skip( ).
+    lv_total = lv_top + lv_skip.
+    lv_start_from = lv_skip + 1.
+
+    "Get company code from the plant
+    SELECT SINGLE bukrs INTO lv_company_code FROM t001k WHERE bwkey = lv_plant.
+
+    "Actual query
+    SELECT kost1 mctxt INTO ls_cost_center FROM m_kostn UP TO lv_total ROWS
+      WHERE
+      bukrs = lv_company_code
+      AND mctxt IN ltr_cc_name
+      AND spras = sy-langu
+      AND datbi GE sy-datum.
+      IF sy-dbcnt GT lv_skip.
+        ls_entity-id = ls_cost_center-kost1.
+        ls_entity-name = ls_cost_center-mctxt.
+        APPEND ls_entity TO et_entityset.
+      ENDIF.
+    ENDSELECT.
+
+  ENDMETHOD.
