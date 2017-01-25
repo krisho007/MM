@@ -1,0 +1,9 @@
+  METHOD unitofmeasuremen_get_entityset.
+
+
+    SELECT a~msehi b~msehl FROM t006 AS a INNER JOIN t006a AS b ON a~msehi = b~msehi
+                                         INTO TABLE et_entityset
+                                         WHERE a~kzkeh = 'X' AND
+                                               b~spras = sy-langu.
+
+  ENDMETHOD.
