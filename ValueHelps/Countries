@@ -1,0 +1,5 @@
+  METHOD countries_get_entityset.
+*   All countries in current language
+    SELECT land1 landx INTO TABLE et_entityset FROM t005t WHERE spras = sy-langu.
+    SORT et_entityset ASCENDING BY name.
+  ENDMETHOD.
