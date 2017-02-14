@@ -1,0 +1,40 @@
+class /CONVRGNT/CL_PR_MPC_EXT definition
+  public
+  inheriting from /CONVRGNT/CL_PR_MPC
+  create public .
+
+public section.
+
+  methods DEFINE
+    redefinition .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS /CONVRGNT/CL_PR_MPC_EXT IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CONVRGNT/CL_PR_MPC_EXT->DEFINE
+* +-------------------------------------------------------------------------------------------------+
+* | [!CX!] /IWBEP/CX_MGW_MED_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method DEFINE.
+
+    super->define( ).
+
+    DATA:
+      lo_entity   TYPE REF TO /iwbep/if_mgw_odata_entity_typ,
+      lo_property TYPE REF TO /iwbep/if_mgw_odata_property.
+
+    lo_entity = model->get_entity_type( iv_entity_name = 'Attachment' ).
+
+    IF lo_entity IS BOUND.
+      lo_property = lo_entity->get_property( iv_property_name = 'mime_type' ).
+      lo_property->set_as_content_type( ).
+    ENDIF.
+
+  endmethod.
+ENDCLASS.
