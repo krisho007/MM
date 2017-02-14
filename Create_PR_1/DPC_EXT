@@ -1,0 +1,3908 @@
+class /CONVRGNT/CL_PR_DPC_EXT definition
+  public
+  inheriting from /CONVRGNT/CL_PR_DPC
+  create public .
+
+public section.
+
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_DEEP_ENTITY
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITY
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_STREAM
+    redefinition .
+protected section.
+
+  methods GET_DELIVERY_ADDRESS
+    importing
+      !IV_ADDRNUM type AD_ADDRNUM
+      !IV_PLANT type WERKS_D
+    exporting
+      !ES_DELIVERY_ADDRESS type /CONVRGNT/DELIVERY_ADDRESS .
+  methods GET_ADDRESS_INTO_PRINTFORM
+    importing
+      !IV_ADDRNUM type AD_ADDRNUM
+    returning
+      value(RS_ADDRESS) type /CONVRGNT/DELIVERY_ADDRESS .
+  methods GET_PLANT_CURRENCY
+    importing
+      !IV_PLANT type WERKS_D
+    returning
+      value(RV_CURRENCY) type WAERS .
+  methods GET_NOTES
+    importing
+      !IV_OBJECT_ID type CHAR10
+      !IV_OBJECT_LINE type NUMC5 optional
+      !IV_APP_TYPE type CHAR2 default 'PR'
+      !IV_LANGU type SPRAS default SY-LANGU
+    returning
+      value(ET_NOTES) type /CONVRGNT/TT_NOTES .
+  methods CREATE_TEXT
+    importing
+      !IV_OBJECT_ID type CHAR10
+      !IV_OBJECT_LINE type NUMC5 optional
+      !IV_TEXT_TYPE type TDID
+      !IV_LANGU type SPRAS default SY-LANGU
+      value(IV_TEXT) type STRING .
+  methods GET_TEXT
+    importing
+      !IV_OBJECT_ID type CHAR10
+      !IV_OBJECT_LINE type NUMC5 optional
+      !IV_TEXT_OBJECT type TDOBJECT
+      !IV_TEXT_TYPE type TDID
+      !IV_TYPE_DESCR type TDTEXT
+      !IV_LANGU type SPRAS default SY-LANGU
+    returning
+      value(RS_NOTE_INFO) type /CONVRGNT/NOTES .
+  methods GET_CONCATENATED_NOTE
+    importing
+      !IS_NOTE_INFO type /CONVRGNT/NOTES
+      !IV_TYPE type TDID
+      !IV_TYPE_DESCR type TDTEXT
+    exporting
+      !ET_NOTES type /CONVRGNT/TT_NOTES .
+  methods GET_TIMESTAMP
+    importing
+      !IV_DATE_CHAR type CHAR10 optional
+      !IV_DATE type DATS optional
+      !IV_TIME type STRING
+      !IV_DATFM type XUDATFM
+      !IV_TZ type STRING
+    exporting
+      !EV_TIME_STAMP type TIMESTAMP .
+  methods BUILD_DATETIME
+    importing
+      !IV_DATE type DATS
+      !IV_TIME type TIMS
+      !IV_CONVERT_USER_TIMEZONE type FLAG optional
+    returning
+      value(RV_DATETIME) type STRING .
+  methods GET_USER_NAME_FROM_ID
+    importing
+      !IV_USER_ID type SYUNAME
+    returning
+      value(RV_USER_NAME) type TEXT80 .
+  methods GET_HEADER_GOS_ATTACHMENTS
+    importing
+      !IV_DOC_NUMBER type CHAR10
+      !IV_DOC_TYPE type CHAR2 default 'PR'
+    exporting
+      !ET_ATTACHMENTS type /CONVRGNT/T_ATTACHMENTS .
+  methods GET_EXPANDED_PR_HEADER
+    importing
+      !IV_PR_NUMBER type BANFN
+    exporting
+      !ER_ENTITY type DATA .
+  methods GET_CONTROLLING_AREA
+    returning
+      value(RV_CONTROLLING_AREA) type KOKRS .
+
+  methods ATTACHMENTS_CREATE_ENTITY
+    redefinition .
+  methods ATTACHMENTS_DELETE_ENTITY
+    redefinition .
+  methods COSTCENTERSET_GET_ENTITYSET
+    redefinition .
+  methods COUNTRIES_GET_ENTITYSET
+    redefinition .
+  methods CURRENCIES_GET_ENTITYSET
+    redefinition .
+  methods DOCUMENTTYPES_GET_ENTITYSET
+    redefinition .
+  methods GLACCOUNTS_GET_ENTITYSET
+    redefinition .
+  methods MATERIALGROUPS_GET_ENTITYSET
+    redefinition .
+  methods MATERIALS_GET_ENTITYSET
+    redefinition .
+  methods NOTES_GET_ENTITYSET
+    redefinition .
+  methods ORDERS_GET_ENTITYSET
+    redefinition .
+  methods PLANTS_GET_ENTITYSET
+    redefinition .
+  methods PRHEADERS_GET_ENTITYSET
+    redefinition .
+  methods PRITEMS_GET_ENTITYSET
+    redefinition .
+  methods PURCHASINGGROUPS_GET_ENTITYSET
+    redefinition .
+  methods UNITOFMEASURMENT_GET_ENTITYSET
+    redefinition .
+  methods VENDORS_GET_ENTITYSET
+    redefinition .
+private section.
+
+  data GV_COUNTER type CHAR3 .
+
+  methods GET_NOTEID
+    returning
+      value(RV_NOTEID) type CHAR3 .
+ENDCLASS.
+
+
+
+CLASS /CONVRGNT/CL_PR_DPC_EXT IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CONVRGNT/CL_PR_DPC_EXT->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_DEEP_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING(optional)
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING(optional)
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING(optional)
+* | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH(optional)
+* | [--->] IO_EXPAND                      TYPE REF TO /IWBEP/IF_MGW_ODATA_EXPAND
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_C(optional)
+* | [<---] ER_DEEP_ENTITY                 TYPE REF TO DATA
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /iwbep/if_mgw_appl_srv_runtime~create_deep_entity.
+
+    DATA:BEGIN OF item.
+            INCLUDE TYPE /convrgnt/cl_pr_mpc=>ts_pritem.
+    DATA: notes TYPE /convrgnt/cl_pr_mpc=>tt_note,
+          services TYPE /convrgnt/cl_pr_mpc=>tt_service,
+         END OF item.
+
+    DATA: BEGIN OF ls_expanded_entry.
+            INCLUDE TYPE /convrgnt/cl_pr_mpc=>ts_prheader.
+    DATA:   items LIKE TABLE OF item.
+    DATA:   notes TYPE /convrgnt/cl_pr_mpc=>tt_note,
+            attachments TYPE /convrgnt/cl_pr_mpc=>tt_attachment.
+    DATA: END OF ls_expanded_entry.
+
+    DATA: lt_return TYPE TABLE OF bapireturn.
+    DATA: ls_return TYPE bapireturn.
+
+    DATA:    lt_requisition_items     TYPE TABLE OF bapiebanc,
+             ls_requisition_items     TYPE bapiebanc,
+             ls_attachment            TYPE /convrgnt/cl_pr_mpc=>ts_attachment,
+             ls_service               TYPE /convrgnt/cl_pr_mpc=>ts_service,
+             lt_requisition_account   TYPE STANDARD TABLE OF bapiebkn,
+             ls_requisition_account   LIKE LINE OF lt_requisition_account,
+             lt_delivery_addresses    TYPE TABLE OF bapimerqaddrdelivery,
+             ls_delivery_address      TYPE bapimerqaddrdelivery,
+*             lt_contract_limits       TYPE TABLE OF bapiesucc,
+*             ls_contract_limit        TYPE bapiesucc,
+             lt_bapi_service_accounts TYPE TABLE OF bapiesklc,
+             ls_bapi_service_account  TYPE bapiesklc,
+             lt_bapi_services         TYPE TABLE OF bapiesllc,
+             ls_bapi_service          TYPE bapiesllc,
+             lt_limits                TYPE TABLE OF bapiesuhc,
+             ls_limit                 TYPE bapiesuhc,
+             ls_document              TYPE borident,
+             ls_object                TYPE borident,
+             lv_count                 TYPE i,
+             lv_pr_item_no            TYPE bnfpo,
+             lv_pr_no                 TYPE banfn,
+             ls_note                  TYPE /convrgnt/cl_pr_mpc=>ts_note,
+             lv_package_no            TYPE packno.
+
+    "Get the data
+    CALL METHOD io_data_provider->read_entry_data
+      IMPORTING
+        es_data = ls_expanded_entry.
+
+    LOOP AT ls_expanded_entry-items INTO item.
+*      lv_count = lv_count + 1 .
+      lv_count = 1.
+      lv_pr_item_no = lv_pr_item_no + '00010'.
+      IF item-itemcategory = '9'. "only for services
+        lv_package_no = lv_package_no + '0000000001'.
+        ls_requisition_items-pckg_no =  lv_package_no. "Increment for each item
+      ENDIF.
+      ls_requisition_items-short_text = item-description.
+      ls_requisition_items-preq_item = lv_pr_item_no.
+      ls_requisition_items-doc_type = ls_expanded_entry-documenttype.  "From header level
+      ls_requisition_items-material = item-materialnumber.
+      ls_requisition_items-item_cat = item-itemcategory.
+      ls_requisition_items-plant = item-plant.
+      ls_requisition_items-quantity = item-quantity.
+      ls_requisition_items-deliv_date  = item-deliverydate.
+      ls_requisition_items-mat_grp = item-materialgroup.
+      ls_requisition_items-c_amt_bapi = item-unitprice.
+      ls_requisition_items-currency = item-unitpricecurrency.
+      ls_requisition_items-unit = item-quantityunit.
+      ls_requisition_items-acctasscat = item-accountassobjecttype.
+      ls_requisition_items-pur_group = item-purchasinggroup.
+      APPEND ls_requisition_items TO lt_requisition_items.
+      ls_requisition_account-preq_item =  lv_pr_item_no.
+      ls_requisition_account-serial_no =  lv_count .
+
+      IF item-accountassobjecttype = 'K'. "Cost Center
+        ls_requisition_account-cost_ctr = item-accountassvalue.
+        CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+          EXPORTING
+            input  = ls_requisition_account-cost_ctr
+          IMPORTING
+            output = ls_requisition_account-cost_ctr.
+
+      ELSEIF item-accountassobjecttype = 'F'. "Order
+        ls_requisition_account-order_no = item-accountassvalue.
+        CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+          EXPORTING
+            input  = ls_requisition_account-order_no
+          IMPORTING
+            output = ls_requisition_account-order_no.
+
+      ENDIF.
+      "GL account
+      ls_requisition_account-g_l_acct = item-glaccountno.
+
+      APPEND ls_requisition_account TO lt_requisition_account.
+
+      "Delivery address. Only if explicit delivery address was sent
+      IF item-explicitdeliveryaddress = abap_true.
+        ls_delivery_address-preq_item = lv_pr_item_no.
+        ls_delivery_address-name = item-deliveryaddress-name.
+        ls_delivery_address-street = item-deliveryaddress-addressline1.
+        ls_delivery_address-city = item-deliveryaddress-city.
+        ls_delivery_address-country = item-deliveryaddress-country.
+        ls_delivery_address-postl_cod1 = item-deliveryaddress-postalcode.
+        APPEND ls_delivery_address TO lt_delivery_addresses.
+        CLEAR ls_delivery_address.
+      ENDIF.
+
+      IF ls_requisition_items-item_cat = '9'. "only for services
+        "Services
+        DATA: lv_srv_line_no TYPE numzeile,
+              lv_srv_line_ext TYPE extrow.
+*        LOOP AT item-services INTO ls_service.
+*          AT FIRST.
+*            lv_srv_line_no = lv_srv_line_no + '0000000001'.
+*            ls_bapi_service-outl_ind = 'X'.
+*
+*            ls_bapi_service-pckg_no = ls_requisition_items-pckg_no.  "Header of the service items
+*            lv_package_no = lv_package_no + '0000000001'.
+*            ls_bapi_service-subpckg_no = lv_package_no.              "Subpackages
+*
+*            ls_bapi_service-line_no = lv_srv_line_no.
+*            ls_bapi_service-ext_line = lv_srv_line_ext.
+*            APPEND ls_bapi_service TO lt_bapi_services.
+*            CLEAR ls_bapi_service.
+*          ENDAT.
+*
+*          lv_srv_line_ext = lv_srv_line_ext + '0000000010'.
+*          lv_srv_line_no = lv_srv_line_no + '0000000001'.
+*
+*          ls_bapi_service-pckg_no = lv_package_no.
+*          ls_bapi_service-line_no = lv_srv_line_no.
+*
+*          ls_bapi_service-ext_line = lv_srv_line_ext.
+*          ls_bapi_service-service = ls_service-serviceno.
+*          ls_bapi_service-short_text = ls_service-description.
+*          ls_bapi_service-quantity = ls_service-quantity.
+*          ls_bapi_service-base_uom = ls_service-uom.
+*          ls_bapi_service-gr_price = ls_service-grossvalue.
+*          APPEND ls_bapi_service TO lt_bapi_services.
+*          CLEAR ls_bapi_service.
+*
+*          "Account assignment for the service
+*          ls_bapi_service_account-pckg_no = lv_package_no.
+*          ls_bapi_service_account-percentage = 100. "100%. Only single account assignment
+*          ls_bapi_service_account-serial_no = lv_count.
+*          ls_bapi_service_account-serno_line = lv_count.
+*          ls_bapi_service_account-line_no = lv_srv_line_no.
+*          APPEND ls_bapi_service_account TO lt_bapi_service_accounts.
+*          CLEAR ls_bapi_service_account.
+*        ENDLOOP.
+
+        lv_srv_line_no = lv_srv_line_no + '0000000001'.
+        ls_bapi_service-outl_ind = 'X'.
+
+        ls_bapi_service-pckg_no = ls_requisition_items-pckg_no.  "Header of the service items
+        lv_package_no = lv_package_no + '0000000001'.
+        ls_bapi_service-subpckg_no = lv_package_no.              "Subpackages
+
+        ls_bapi_service-line_no = lv_srv_line_no.
+        ls_bapi_service-ext_line = lv_srv_line_ext.
+        APPEND ls_bapi_service TO lt_bapi_services.
+        CLEAR ls_bapi_service.
+
+        lv_srv_line_ext = lv_srv_line_ext + '0000000010'.
+        lv_srv_line_no = lv_srv_line_no + '0000000001'.
+
+        ls_bapi_service-pckg_no = lv_package_no.
+        ls_bapi_service-line_no = lv_srv_line_no.
+
+        ls_bapi_service-ext_line = lv_srv_line_ext.
+        ls_bapi_service-service = ls_service-serviceno.
+        ls_bapi_service-short_text = item-description.
+        ls_bapi_service-quantity = item-quantity.
+        ls_bapi_service-base_uom = item-quantityunit.
+        ls_bapi_service-price_unit = item-quantity.
+        ls_bapi_service-gr_price = item-quantity * item-unitprice.
+        APPEND ls_bapi_service TO lt_bapi_services.
+        CLEAR ls_bapi_service.
+
+        "Account assignment for the service
+        ls_bapi_service_account-pckg_no = lv_package_no.
+        ls_bapi_service_account-percentage = 100. "100%. Only single account assignment
+        ls_bapi_service_account-quantity = item-quantity.
+        ls_bapi_service_account-serial_no = lv_count.
+        ls_bapi_service_account-serno_line = lv_count.
+        ls_bapi_service_account-line_no = lv_srv_line_no.
+        APPEND ls_bapi_service_account TO lt_bapi_service_accounts.
+        CLEAR ls_bapi_service_account.
+
+        "Service Limit
+        ls_limit-pckg_no = ls_requisition_items-pckg_no.
+        ls_limit-limit = item-overalllimit. "Overall Limit
+        ls_limit-exp_value = item-overalllimit. "expected amount same as Overall Limit
+        ls_limit-no_limit = item-nolimit.
+        IF ls_limit-limit GT 0 OR ls_limit-no_limit EQ abap_true.
+          APPEND ls_limit TO lt_limits.
+          ls_bapi_service_account-pckg_no = ls_limit-pckg_no.
+          ls_bapi_service_account-percentage = 100. "100%. Only single account assignment
+*        ls_bapi_service_account-serial_no = lv_count. "Account assignment for limits is same as that for the line
+          APPEND ls_bapi_service_account TO lt_bapi_service_accounts.
+        ENDIF.
+      ENDIF.
+      CLEAR: ls_requisition_items, ls_requisition_account, ls_limit, ls_bapi_service_account.
+    ENDLOOP.
+
+    CALL FUNCTION 'BAPI_REQUISITION_CREATE'
+      EXPORTING
+        skip_items_with_error          = ''
+        automatic_source               = 'X'
+      IMPORTING
+        number                         = lv_pr_no
+      TABLES
+        requisition_items              = lt_requisition_items
+        requisition_account_assignment = lt_requisition_account
+*       REQUISITION_ITEM_TEXT          =
+*       requisition_limits             = lt_limits
+*       requisition_contract_limits    = lt_contract_limits
+        requisition_services           = lt_bapi_services
+        requisition_srv_accass_values  = lt_bapi_service_accounts
+        return                         = lt_return
+*       REQUISITION_SERVICES_TEXT      =
+        requisition_addrdelivery       = lt_delivery_addresses
+*       EXTENSIONIN                    =
+      .
+
+    DATA lv_error_message TYPE string.
+    LOOP AT lt_return INTO ls_return WHERE type = 'E' OR type = 'A'.
+      lv_error_message = ls_return-message.
+
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = lv_error_message.
+    ENDLOOP.
+
+    ls_expanded_entry-prnumber = lv_pr_no.
+
+    IF lv_pr_no IS NOT INITIAL.
+      LOOP AT ls_expanded_entry-notes INTO ls_note.
+        "Header level texts
+        CALL METHOD me->create_text
+          EXPORTING
+            iv_object_id = lv_pr_no
+            iv_text_type = ls_note-notetype
+            iv_text      = ls_note-notetext.
+
+      ENDLOOP.
+
+      "Attachemnts: Associate with PR
+      LOOP AT ls_expanded_entry-attachments INTO ls_attachment.
+
+        ls_object-objkey = lv_pr_no.
+        ls_object-objtype = 'BUS2105'.  "Purchase Requisition
+
+        ls_document-objtype = 'MESSAGE'.
+        ls_document-objkey = ls_attachment-id.
+
+        CALL FUNCTION 'BINARY_RELATION_CREATE'
+          EXPORTING
+            obj_rolea    = ls_object
+            obj_roleb    = ls_document
+            relationtype = 'ATTA'
+          EXCEPTIONS
+            OTHERS       = 1.
+      ENDLOOP.
+
+*       Commit PR
+      CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'
+        EXPORTING
+          wait = 'X'.
+
+*       Commit Note
+      CALL FUNCTION 'COMMIT_TEXT'
+        EXPORTING
+          object = 'EBANH'.
+
+*       Commit attachment relationship
+      COMMIT WORK AND WAIT.
+    ENDIF.
+
+    CALL METHOD me->get_expanded_pr_header
+      EXPORTING
+        iv_pr_number = lv_pr_no
+      IMPORTING
+        er_entity    = er_deep_entity.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CONVRGNT/CL_PR_DPC_EXT->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING(optional)
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING(optional)
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING(optional)
+* | [--->] IS_MEDIA_RESOURCE              TYPE        TY_S_MEDIA_RESOURCE
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH(optional)
+* | [--->] IV_SLUG                        TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_C(optional)
+* | [<---] ER_ENTITY                      TYPE REF TO DATA
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /iwbep/if_mgw_appl_srv_runtime~create_stream.
+
+    DATA: ls_fol_id       TYPE soodk,
+          ls_obj_data     TYPE sood1,
+          ls_attachemnt   TYPE /convrgnt/cl_pr_mpc=>ts_attachment,  "Of the Atatchemnt entity type
+          lt_file_solix   TYPE TABLE OF solix,
+          ls_obj_data_api TYPE sodocchgi1,
+          ls_doc_info     TYPE sofolenti1,
+          ls_content      TYPE soli,
+          lt_header       TYPE STANDARD TABLE OF soli,
+          lv_filename     TYPE string. "file name and ext
+
+    " The temporary location of the document to be uploaded
+    CALL FUNCTION 'SO_FOLDER_ROOT_ID_GET'
+      EXPORTING
+        region    = 'B'  " No authorization for Q : doucble check this
+      IMPORTING
+        folder_id = ls_fol_id
+      EXCEPTIONS
+        OTHERS    = 1.
+
+    IF sy-subrc NE 0.
+      "Raise exception
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = 'File upload failed'.
+    ENDIF.
+
+    " Convert into solix/Binary table
+    lt_file_solix = cl_bcs_convert=>xstring_to_solix( iv_xstring = is_media_resource-value ).
+
+    ls_obj_data_api-obj_name = 'INFORMATION'. "par défaut
+    ls_obj_data_api-obj_langu = sy-langu.
+
+*   Get file name and extension
+    CALL METHOD cl_bcs_utilities=>split_name
+      EXPORTING
+        iv_name      = iv_slug  "iv_slug should have complete file name with extension. Ex:samplefile.docx
+        iv_delimiter = '.'
+      IMPORTING
+        ev_extension = ls_obj_data-file_ext.
+
+    "File name in input as File description
+    ls_obj_data_api-obj_descr = iv_slug.
+
+*   Object header
+    CLEAR ls_content.
+    CONCATENATE '&SO_FILENAME=' iv_slug INTO ls_content.
+    APPEND ls_content TO lt_header.
+
+    "Very important step. This length will be used when the stream is read to cut till this length
+    ls_obj_data_api-doc_size = xstrlen( is_media_resource-value ).
+
+    "Creating file
+    CALL FUNCTION 'SO_DOCUMENT_INSERT_API1'
+      EXPORTING
+        folder_id                  = ls_fol_id
+        document_data              = ls_obj_data_api
+        document_type              = ls_obj_data-file_ext
+      IMPORTING
+        document_info              = ls_doc_info
+      TABLES
+        contents_hex               = lt_file_solix
+        object_header              = lt_header
+      EXCEPTIONS
+        folder_not_exist           = 1
+        document_type_not_exist    = 2
+        operation_no_authorization = 3
+        parameter_error            = 4
+        x_error                    = 5
+        enqueue_error              = 6
+        OTHERS                     = 7.
+
+    IF sy-subrc EQ 0.
+      "File will be uploaded and this document ID is given back to the UI.
+      "Right now the document is not associated with the Business object (ex: sales Order).
+      "This method is getting called when a file is uploded, but the business object is yet to be created.
+      "UI will send this ID along with Business object creation call, so that they can be associated.
+      "If the business object is already present, (say updating a sales order), then this document ID will be
+      "associated with the Bsuiness object right away.
+      ls_attachemnt-id = ls_doc_info-doc_id.
+      ls_attachemnt-createdby = ls_doc_info-creat_name.
+      ls_attachemnt-createdbyname = ls_doc_info-creat_fnam.
+      ls_attachemnt-filename = iv_slug.
+
+      CONVERT DATE ls_doc_info-creat_date TIME ls_doc_info-creat_time
+      INTO TIME STAMP ls_attachemnt-createdat TIME ZONE sy-zonlo.
+
+      ls_attachemnt-mime_type = is_media_resource-mime_type.
+      ls_attachemnt-filesize = ls_doc_info-doc_size.
+      ls_attachemnt-filedescription = ls_doc_info-obj_descr.
+
+      copy_data_to_ref(
+        EXPORTING
+          is_data = ls_attachemnt
+        CHANGING
+          cr_data = er_entity ).
+
+    ELSE.
+      "Raise exception
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = 'File upload failed'.
+
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CONVRGNT/CL_PR_DPC_EXT->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_EXPANDED_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING(optional)
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING(optional)
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING(optional)
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH(optional)
+* | [--->] IO_EXPAND                      TYPE REF TO /IWBEP/IF_MGW_ODATA_EXPAND(optional)
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
+* | [<---] ER_ENTITY                      TYPE REF TO DATA
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_ENTITY_CNTXT
+* | [<---] ET_EXPANDED_CLAUSES            TYPE        STRING_TABLE
+* | [<---] ET_EXPANDED_TECH_CLAUSES       TYPE        STRING_TABLE
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_expanded_entity.
+
+* Get PR Header and related Items, Notes and Attachemnts together.
+    DATA: lv_entity_name TYPE /iwbep/mgw_tech_name,
+          lv_pr_number   TYPE char10,
+          ls_keytab      TYPE /iwbep/s_mgw_tech_pair,
+          lt_key_tab     TYPE /iwbep/t_mgw_tech_pairs.
+
+    " Get the parent entity
+    lv_entity_name = io_tech_request_context->get_entity_type_name( ).
+    lt_key_tab = io_tech_request_context->get_keys( ).
+
+    IF lv_entity_name = 'PRHeader'.
+
+      IF io_expand->compare_to_tech_names( 'ITEMS,NOTES,ITEMS/SERVICES,ATTACHMENTS' ) = /iwbep/if_mgw_odata_expand=>gcs_compare_result-match_equals.
+
+        " Get PR Number
+        READ TABLE lt_key_tab INTO ls_keytab INDEX 1.
+        IF sy-subrc EQ 0 AND ls_keytab-name EQ 'PRNUMBER'.
+          lv_pr_number = ls_keytab-value.
+        ENDIF.
+
+        CALL METHOD me->get_expanded_pr_header
+          EXPORTING
+            iv_pr_number = lv_pr_number
+          IMPORTING
+            er_entity    = er_entity.
+
+        "Inform the framework that below expands are already done
+        APPEND 'ITEMS' TO et_expanded_tech_clauses.
+        APPEND 'ITEMS/SERVICES' TO et_expanded_tech_clauses.
+        APPEND 'NOTES' TO et_expanded_tech_clauses.
+        APPEND 'ATTACHMENTS' TO et_expanded_tech_clauses.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method /CONVRGNT/CL_PR_DPC_EXT->/IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_STREAM
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING(optional)
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING(optional)
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING(optional)
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH(optional)
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY(optional)
+* | [<---] ER_STREAM                      TYPE REF TO DATA
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_ENTITY_CNTXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_stream.
+
+    DATA: lv_entity_name  TYPE /iwbep/mgw_tech_name,
+          ls_key_tab      TYPE /iwbep/s_mgw_tech_pair,
+          lt_key_tab      TYPE /iwbep/t_mgw_tech_pairs,
+          ls_stream       TYPE ty_s_media_resource,
+          ls_header       TYPE ihttpnvp,
+          lv_attach_key   TYPE so_entryid,
+          lt_hex_content  TYPE TABLE OF solix,
+          ls_hex_content  TYPE solix,
+          ls_doc_data     TYPE sofolenti1,
+          lt_object_content   TYPE TABLE OF solisti1,
+          ls_object_content   TYPE solisti1,
+          lv_stream       TYPE xstring,
+          lv_tmp_stream   TYPE xstring,
+          lv_length       TYPE i.
+    DATA: lv_file_content_asc TYPE string.
+    DATA:
+          ls_docid_str TYPE soentryi1,
+          ls_filter    TYPE sofor,
+          ls_folder    TYPE sofdk,
+          ls_object    TYPE soodk,
+          ls_obj_hd    TYPE sood2,
+          lt_objhead   TYPE STANDARD TABLE OF soli,
+          ls_objhead   TYPE soli,
+*            lv_filesize  TYPE so_obj_len,
+          lt_split     TYPE TABLE OF string,
+          lv_lines     TYPE i,
+          ls_extension TYPE string,
+          lv_extension TYPE sdok_fnext,
+          ls_filename  TYPE string,
+          lv_mime_type TYPE w3conttype,
+          lv_file_name TYPE sdok_filnm.
+
+    DATA: lt_attachment_list TYPE TABLE OF soattlsti1.
+
+    lv_entity_name = io_tech_request_context->get_entity_type_name( ).
+    lt_key_tab = io_tech_request_context->get_keys( ).
+
+    IF lv_entity_name = 'Attachment'.
+
+      READ TABLE lt_key_tab INDEX 1 INTO ls_key_tab.
+      IF sy-subrc EQ 0.
+        lv_attach_key = ls_key_tab-value.
+      ENDIF.
+
+      CALL FUNCTION 'SO_DOCUMENT_READ_API1'
+        EXPORTING
+          document_id                = lv_attach_key
+*         FILTER                     = 'X '
+        IMPORTING
+          document_data              = ls_doc_data
+        TABLES
+*         OBJECT_HEADER              =
+          object_content             = lt_object_content
+*         OBJECT_PARA                =
+*         OBJECT_PARB                =
+          attachment_list            = lt_attachment_list
+*         RECEIVER_LIST              =
+          contents_hex               = lt_hex_content
+        EXCEPTIONS
+          document_id_not_exist      = 1
+          operation_no_authorization = 2
+          x_error                    = 3
+          OTHERS                     = 4.
+      IF sy-subrc <> 0.
+* Implement suitable error handling here
+      ENDIF.
+
+      lv_length = ls_doc_data-doc_size.
+      CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+        EXPORTING
+          input_length = lv_length
+        IMPORTING
+          buffer       = lv_stream
+        TABLES
+          binary_tab   = lt_hex_content
+        EXCEPTIONS
+          failed       = 1
+          OTHERS       = 2.
+
+      ls_filter-sndi = abap_true.
+
+      MOVE lv_attach_key TO ls_docid_str.
+      MOVE-CORRESPONDING ls_docid_str TO ls_folder.
+      MOVE-CORRESPONDING ls_docid_str TO ls_object.
+
+      CALL FUNCTION 'SO_OBJECT_READ'
+        EXPORTING
+          filter                     = ls_filter
+          folder_id                  = ls_folder
+          object_id                  = ls_object
+        IMPORTING
+          object_hd_display          = ls_obj_hd
+        TABLES
+          objhead                    = lt_objhead
+        EXCEPTIONS
+          active_user_not_exist      = 1
+          communication_failure      = 2
+          component_not_available    = 3
+          folder_not_exist           = 4
+          folder_no_authorization    = 5
+          object_not_exist           = 6
+          object_no_authorization    = 7
+          operation_no_authorization = 8
+          owner_not_exist            = 9
+          parameter_error            = 10
+          substitute_not_active      = 11
+          substitute_not_defined     = 12
+          system_failure             = 13
+          x_error                    = 14
+          OTHERS                     = 15.
+      IF sy-subrc <> 0.
+        RETURN.
+      ENDIF.
+*   -----------------------------------------------------------------
+*   build ev_mime_type and ev_file_name
+*   -----------------------------------------------------------------
+      LOOP AT lt_objhead INTO ls_objhead
+                 WHERE table_line CP '&SO_FILENAME=*'.
+        SPLIT ls_objhead AT '.' INTO TABLE lt_split.
+        IF sy-subrc IS INITIAL..
+          lv_lines = lines( lt_split ).
+          IF lv_lines <> 0.
+            READ TABLE lt_split INTO ls_extension INDEX lv_lines.
+            lv_extension = ls_extension.
+            IF lv_extension <> ls_obj_hd-file_ext.
+              SELECT SINGLE type INTO lv_mime_type FROM sdokmime_c
+                     WHERE extension = lv_extension.
+              IF sy-subrc <> 0.
+                SELECT SINGLE type INTO lv_mime_type FROM sdokmime
+                     WHERE extension = lv_extension.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+        ENDIF.
+        CLEAR: lt_split.
+        SPLIT ls_objhead AT '=' INTO TABLE lt_split.
+        lv_lines = lines( lt_split ).
+        IF lv_lines <> 0.
+          READ TABLE lt_split INTO ls_filename INDEX lv_lines.
+          lv_file_name = ls_filename.
+        ENDIF.
+        EXIT.
+      ENDLOOP.
+
+      IF lv_file_name IS INITIAL.
+        CONCATENATE ls_obj_hd-objdes ls_obj_hd-file_ext INTO lv_file_name SEPARATED BY '.'.
+      ENDIF.
+
+*     common processing, calculate mime-type
+      CALL FUNCTION 'SDOK_MIMETYPE_GET'
+        EXPORTING
+          extension = ls_doc_data-obj_type
+        IMPORTING
+          mimetype  = lv_mime_type.
+
+      ls_stream-mime_type = lv_mime_type.
+      ls_stream-value = lv_stream.
+
+      IF  ls_stream-mime_type NE 'application/pdf' .        "#EC NOTEXT
+        CLEAR ls_header.
+        ls_header-name = 'Content-Disposition'.             "#EC NOTEXT
+
+        CONCATENATE 'attachment; filename=' lv_file_name INTO ls_header-value.
+        me->set_header( is_header = ls_header ).
+      ENDIF.
+
+      copy_data_to_ref( EXPORTING is_data = ls_stream
+                    CHANGING  cr_data = er_stream ).
+
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->ATTACHMENTS_CREATE_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_C(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IO_DATA_PROVIDER               TYPE REF TO /IWBEP/IF_MGW_ENTRY_PROVIDER(optional)
+* | [<---] ER_ENTITY                      TYPE        /CONVRGNT/CL_PR_MPC=>TS_ATTACHMENT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD attachments_create_entity.
+*    DATA: ls_keytab TYPE /iwbep/s_mgw_name_value_pair.
+*
+*    DATA: ls_fol_id TYPE soodk,
+*    ls_obj_id TYPE soodk,
+*    ls_obj_data TYPE sood1,
+*    ls_folmem_k TYPE sofmk,
+*    ls_note TYPE borident,
+*    ls_object TYPE borident,
+*    lv_ep_note TYPE borident-objkey,
+*    lv_offset TYPE i.
+*
+*    DATA: ls_attachemnt TYPE /convrgnt/cl_pr_mpc=>ts_attachment.
+*
+*    DATA:
+*          it_objhead      TYPE STANDARD TABLE OF soli,
+*          lt_content      TYPE STANDARD TABLE OF soli,
+*          lt_file_solix   TYPE TABLE OF solix,
+*          wa_content      TYPE soli,
+*          lv_string       TYPE string,
+*          lv_pr_number    TYPE banfn.
+*
+*
+*    ls_object-objkey = lv_pr_number.
+*    ls_object-objtype = 'BUS2105'.  "Purchase Requisition
+*
+*    ls_note-objtype = 'MESSAGE'.
+*    ls_note-objkey = ls_doc_info-doc_id.
+*
+*    CALL FUNCTION 'BINARY_RELATION_CREATE_COMMIT'
+*      EXPORTING
+*        obj_rolea    = ls_object
+*        obj_roleb    = ls_note
+*        relationtype = 'ATTA'
+*      EXCEPTIONS
+*        OTHERS       = 1.
+*
+*    IF sy-subrc EQ 0.
+*      ls_attachemnt-id = ls_doc_info-doc_id.
+*      ls_attachemnt-createdby = ls_doc_info-creat_name.
+*      ls_attachemnt-createdbyname = ls_doc_info-creat_fnam.
+*      ls_attachemnt-filename = iv_slug.
+*      ls_attachemnt-createdat = ls_doc_info-creat_date.
+*      ls_attachemnt-mime_type = is_media_resource-mime_type.
+*      ls_attachemnt-filesize = ls_doc_info-doc_size.
+*      ls_attachemnt-filedescription = ls_doc_info-obj_descr.
+*      copy_data_to_ref(
+*        EXPORTING
+*          is_data = ls_attachemnt
+*        CHANGING
+*          cr_data = er_entity ).
+*
+*    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->ATTACHMENTS_DELETE_ENTITY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITY_D(optional)
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD attachments_delete_entity.
+
+    DATA: lv_doc_id       TYPE so_entryid,
+          lv_message      TYPE string,
+          ls_keytab       TYPE /iwbep/s_mgw_tech_pair,
+          lt_key_tab      TYPE /iwbep/t_mgw_tech_pairs.
+
+* Get the document key
+    lt_key_tab = io_tech_request_context->get_keys( ).
+
+    READ TABLE lt_key_tab INTO ls_keytab WITH KEY name = 'ID'.
+    IF sy-subrc EQ 0.
+      lv_doc_id = ls_keytab-value.
+      CALL FUNCTION 'SO_DOCUMENT_DELETE_API1'
+        EXPORTING
+          document_id                = lv_doc_id
+*         UNREAD_DELETE              =
+*         PUT_IN_TRASH               = 'X'
+        EXCEPTIONS
+          document_not_exist         = 1
+          operation_no_authorization = 2
+          parameter_error            = 3
+          x_error                    = 4
+          enqueue_error              = 5
+          OTHERS                     = 6.
+      IF sy-subrc <> 0.
+*       Implement suitable error handling here
+        MESSAGE e001(/convrgnt/pr) INTO lv_message.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+            message_unlimited = lv_message.
+      ENDIF.
+    ELSE.
+      "raise exception
+*     Implement suitable error handling here
+      MESSAGE e002(/convrgnt/pr) INTO lv_message.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = lv_message.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->BUILD_DATETIME
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_DATE                        TYPE        DATS
+* | [--->] IV_TIME                        TYPE        TIMS
+* | [--->] IV_CONVERT_USER_TIMEZONE       TYPE        FLAG(optional)
+* | [<-()] RV_DATETIME                    TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD build_datetime.
+    DATA : lv_timestamp   TYPE  timestamp,
+       lv_date        TYPE dats,
+       lv_time        TYPE tims.
+    IF iv_convert_user_timezone IS SUPPLIED.
+      IF iv_convert_user_timezone EQ abap_true.
+        CONCATENATE iv_date iv_time INTO rv_datetime.
+        lv_timestamp = rv_datetime.
+        CONVERT TIME STAMP lv_timestamp
+            TIME ZONE sy-zonlo
+            INTO DATE lv_date TIME  lv_time .
+        CONCATENATE lv_date  lv_time INTO rv_datetime.
+      ENDIF.
+    ELSE.
+      CONCATENATE iv_date iv_time INTO rv_datetime.
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->COSTCENTERSET_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_COSTCENTER
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD costcenterset_get_entityset.
+*-------------------------------------------------------------
+*  Data declaration
+*-------------------------------------------------------------
+    DATA lo_filter TYPE  REF TO /iwbep/if_mgw_req_filter.
+    DATA lt_filter_select_options TYPE /iwbep/t_mgw_select_option.
+    DATA lv_filter_str TYPE string.
+    DATA lv_max_hits TYPE i VALUE 9999.
+    DATA ls_paging TYPE /iwbep/s_mgw_paging.
+    DATA ls_converted_keys LIKE LINE OF et_entityset.
+    DATA ls_message TYPE bapiret2.
+    DATA lt_selopt_ccid TYPE ddshselops.
+    DATA lt_selopt_cctx TYPE ddshselops.
+    DATA ls_selopt LIKE LINE OF lt_selopt_cctx.
+    DATA ls_filter TYPE /iwbep/s_mgw_select_option.
+    DATA ls_filter_range TYPE /iwbep/s_cod_select_option.
+    DATA lr_mctxt LIKE RANGE OF ls_converted_keys-mctxt.
+    DATA ls_mctxt LIKE LINE OF lr_mctxt.
+    DATA lr_kostl LIKE RANGE OF ls_converted_keys-kostl.
+    DATA ls_kostl LIKE LINE OF lr_kostl.
+    DATA lt_result_list TYPE /iwbep/if_sb_gendpc_shlp_data=>tt_result_list.
+    DATA lt_result_list_tx TYPE /iwbep/if_sb_gendpc_shlp_data=>tt_result_list.
+    DATA lv_next TYPE i VALUE 1.
+    DATA ls_entityset LIKE LINE OF et_entityset.
+    DATA ls_result_list_next LIKE LINE OF lt_result_list.
+    DATA ls_result_list LIKE LINE OF lt_result_list.
+    DATA lv_controlling_area TYPE kokrs.
+
+    DATA: BEGIN OF ls_gl_account,
+      kostl TYPE kostl,
+      kstar TYPE kstar,
+      END OF ls_gl_account,
+      lt_gl_accounts LIKE TABLE OF ls_gl_account.
+
+    DATA: BEGIN OF ls_gl_account_text,
+      saknr TYPE saknr,
+      txt20 TYPE txt20,
+      END OF ls_gl_account_text,
+      lt_gl_account_texts LIKE TABLE OF ls_gl_account_text.
+
+    FIELD-SYMBOLS: <fs_entity> LIKE LINE OF et_entityset.
+*-------------------------------------------------------------
+*  Map the runtime request to the Search Help select option - Only mapped attributes
+*-------------------------------------------------------------
+* Get all input information from the technical request context object
+* Since DPC works with internal property names and runtime API interface holds external property names
+* the process needs to get the all needed input information from the technical request context object
+* Get filter or select option information
+    lo_filter = io_tech_request_context->get_filter( ).
+    lt_filter_select_options = lo_filter->get_filter_select_options( ).
+    lv_filter_str = lo_filter->get_filter_string( ).
+
+* Check if the supplied filter is supported by standard gateway runtime process
+    IF  lv_filter_str            IS NOT INITIAL
+    AND lt_filter_select_options IS INITIAL.
+      " If the string of the Filter System Query Option is not automatically converted into
+      " filter option table (lt_filter_select_options), then the filtering combination is not supported
+      " Log message in the application log
+      me->/iwbep/if_sb_dpc_comm_services~log_message(
+        EXPORTING
+          iv_msg_type   = 'E'
+          iv_msg_id     = '/IWBEP/MC_SB_DPC_ADM'
+          iv_msg_number = 025 ).
+      " Raise Exception
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+        EXPORTING
+          textid = /iwbep/cx_mgw_tech_exception=>internal_error.
+    ENDIF.
+
+* Get key table information
+    io_tech_request_context->get_converted_source_keys(
+      IMPORTING
+        es_key_values  = ls_converted_keys ).
+
+    ls_paging-top = io_tech_request_context->get_top( ).
+    ls_paging-skip = io_tech_request_context->get_skip( ).
+
+    " Calculate the number of max hits to be fetched from the function module
+    " The lv_max_hits value is a summary of the Top and Skip values
+    IF ls_paging-top > 0.
+      lv_max_hits = is_paging-top + is_paging-skip.
+    ENDIF.
+
+** Maps filter table lines to the Search Help select option table
+*    LOOP AT lt_filter_select_options INTO ls_filter.
+*
+*      LOOP AT ls_filter-select_options INTO ls_filter_range.
+*        CASE ls_filter-property.
+*          WHEN 'MCTXT'.              " Equivalent to 'CostCenterText' property in the service
+*            lo_filter->convert_select_option(
+*              EXPORTING
+*                is_select_option = ls_filter
+*              IMPORTING
+*                et_select_option = lr_mctxt ).
+*
+*            LOOP AT lr_mctxt INTO ls_mctxt.
+*              "For case insencitive search
+*              ls_selopt-low = to_upper( ls_mctxt-low ).
+*              ls_selopt-high = to_upper( ls_mctxt-high ).
+*
+*              ls_selopt-sign = ls_mctxt-sign.
+*              ls_selopt-option = ls_mctxt-option.
+**              ls_selopt-low = ls_mctxt-low.
+**              ls_selopt-high = ls_mctxt-high.
+*              ls_selopt-shlpfield = 'MCTXT'.
+*              ls_selopt-shlpname = '/CONVRGNT/SH_COST_CENTER'.
+*              APPEND ls_selopt TO lt_selopt.
+*              CLEAR ls_selopt.
+*            ENDLOOP.
+*          WHEN 'KOSTL'.              " Equivalent to 'CostCenterID' property in the service
+*            lo_filter->convert_select_option(
+*              EXPORTING
+*                is_select_option = ls_filter
+*              IMPORTING
+*                et_select_option = lr_kostl ).
+*
+*            LOOP AT lr_kostl INTO ls_kostl.
+*              ls_selopt-sign = ls_kostl-sign.
+*              ls_selopt-option = ls_kostl-option.
+*              ls_selopt-low = ls_kostl-low.
+*              ls_selopt-high = ls_kostl-high.
+*              ls_selopt-shlpfield = 'KOSTL'.
+*              ls_selopt-shlpname = '/CONVRGNT/SH_COST_CENTER'.
+*              APPEND ls_selopt TO lt_selopt.
+*              CLEAR ls_selopt.
+*            ENDLOOP.
+*
+*          WHEN OTHERS.
+*            " Log message in the application log
+*            me->/iwbep/if_sb_dpc_comm_services~log_message(
+*              EXPORTING
+*                iv_msg_type   = 'E'
+*                iv_msg_id     = '/IWBEP/MC_SB_DPC_ADM'
+*                iv_msg_number = 020
+*                iv_msg_v1     = ls_filter-property ).
+*            " Raise Exception
+*            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+*              EXPORTING
+*                textid = /iwbep/cx_mgw_tech_exception=>internal_error.
+*        ENDCASE.
+*      ENDLOOP.
+*    ENDLOOP.
+
+**********************Search in cost center ID****************
+    LOOP AT lt_filter_select_options INTO ls_filter.
+      LOOP AT ls_filter-select_options INTO ls_filter_range.
+        lo_filter->convert_select_option(
+          EXPORTING
+            is_select_option = ls_filter
+          IMPORTING
+            et_select_option = lr_mctxt ).
+
+        LOOP AT lr_mctxt INTO ls_kostl.
+          ls_selopt-sign = ls_kostl-sign.
+          ls_selopt-option = ls_kostl-option.
+          ls_selopt-low = ls_kostl-low.
+          ls_selopt-high = ls_kostl-high.
+          ls_selopt-shlpfield = 'KOSTL'.
+          ls_selopt-shlpname = '/CONVRGNT/SH_COST_CENTER'.
+          APPEND ls_selopt TO lt_selopt_ccid.
+          CLEAR ls_selopt.
+        ENDLOOP.
+      ENDLOOP.
+    ENDLOOP.
+
+    LOOP AT lt_filter_select_options INTO ls_filter.
+      LOOP AT ls_filter-select_options INTO ls_filter_range.
+        CLEAR lr_mctxt.
+
+        lo_filter->convert_select_option(
+          EXPORTING
+            is_select_option = ls_filter
+          IMPORTING
+            et_select_option = lr_mctxt ).
+
+        LOOP AT lr_mctxt INTO ls_mctxt.
+          ls_selopt-sign = ls_mctxt-sign.
+          ls_selopt-option = ls_mctxt-option.
+          "For case insencitive search
+          ls_selopt-low = to_upper( ls_mctxt-low ).
+          ls_selopt-high = to_upper( ls_mctxt-high ).
+          ls_selopt-shlpfield = 'MCTXT'.
+          ls_selopt-shlpname = '/CONVRGNT/SH_COST_CENTER'.
+          APPEND ls_selopt TO lt_selopt_cctx.
+          CLEAR ls_selopt.
+        ENDLOOP.
+      ENDLOOP.
+    ENDLOOP.
+
+*-------------------------------------------------------------
+*  Call to Search Help get values mechanism
+*-------------------------------------------------------------
+*   Pass controlling area
+    lv_controlling_area = me->get_controlling_area( ).
+    IF lv_controlling_area IS NOT INITIAL.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      ls_selopt-low = lv_controlling_area.
+      ls_selopt-shlpfield = 'KOKRS'.
+      ls_selopt-shlpname = '/CONVRGNT/SH_COST_CENTER'.
+      APPEND ls_selopt TO lt_selopt_cctx.
+      APPEND ls_selopt TO lt_selopt_ccid.
+      CLEAR ls_selopt.
+    ENDIF.
+
+* Get search help values
+    me->/iwbep/if_sb_gendpc_shlp_data~get_search_help_values(
+      EXPORTING
+        iv_shlp_name = '/CONVRGNT/SH_COST_CENTER'
+        iv_maxrows = lv_max_hits
+        iv_sort = 'X'
+        iv_call_shlt_exit = 'X'
+        it_selopt = lt_selopt_ccid
+      IMPORTING
+        et_return_list = lt_result_list
+        es_message = ls_message ).
+
+    me->/iwbep/if_sb_gendpc_shlp_data~get_search_help_values(
+      EXPORTING
+        iv_shlp_name = '/CONVRGNT/SH_COST_CENTER'
+        iv_maxrows = lv_max_hits
+        iv_sort = 'X'
+        iv_call_shlt_exit = 'X'
+        it_selopt = lt_selopt_cctx
+      IMPORTING
+        et_return_list = lt_result_list_tx
+        es_message = ls_message ).
+
+    APPEND LINES OF lt_result_list_tx TO lt_result_list.
+*-------------------------------------------------------------
+*  Map the Search Help returned results to the caller interface - Only mapped attributes
+*-------------------------------------------------------------
+    IF ls_message IS NOT INITIAL.
+* Call RFC call exception handling
+      me->/iwbep/if_sb_dpc_comm_services~rfc_save_log(
+        EXPORTING
+          is_return      = ls_message
+          iv_entity_type = iv_entity_name
+          it_key_tab     = it_key_tab ).
+    ENDIF.
+
+    CLEAR et_entityset.
+    LOOP AT lt_result_list INTO ls_result_list
+      WHERE record_number > ls_paging-skip.
+
+      " Move SH results to GW request responce table
+      lv_next = sy-tabix + 1. " next loop iteration
+      CASE ls_result_list-field_name.
+        WHEN 'KOSTL'.
+          ls_entityset-kostl = ls_result_list-field_value.
+        WHEN 'KTEXT'.
+          ls_entityset-mctxt = ls_result_list-field_value.
+      ENDCASE.
+
+      " Check if the next line in the result list is a new record
+      READ TABLE lt_result_list INTO ls_result_list_next INDEX lv_next.
+      IF sy-subrc <> 0
+      OR ls_result_list-record_number <> ls_result_list_next-record_number.
+        " Save the collected SH result in the GW request table
+        APPEND ls_entityset TO et_entityset.
+        CLEAR: ls_result_list_next, ls_entityset.
+      ENDIF.
+
+    ENDLOOP.
+
+    "   Remove duplicates
+    SORT et_entityset BY kostl.
+    DELETE ADJACENT DUPLICATES FROM et_entityset COMPARING kostl.
+
+    IF et_entityset[] IS NOT INITIAL.
+* check if there is any default GL accounts assigned
+      SELECT kostl kstar INTO TABLE lt_gl_accounts FROM
+                              tka3a
+                              FOR ALL ENTRIES IN et_entityset
+                              WHERE
+                                 kostl = et_entityset-kostl.
+      IF lt_gl_accounts[] IS NOT INITIAL.
+        SELECT saknr txt20 INTO TABLE lt_gl_account_texts FROM
+                                skat
+                                FOR ALL ENTRIES IN lt_gl_accounts
+                                WHERE
+                                   saknr = lt_gl_accounts-kstar AND
+                                   spras = sy-langu.
+
+
+        LOOP AT et_entityset ASSIGNING <fs_entity>.
+          READ TABLE lt_gl_accounts INTO ls_gl_account WITH KEY kostl = <fs_entity>-kostl.
+          IF sy-subrc EQ 0.
+            <fs_entity>-glaccount = ls_gl_account-kstar.
+
+            READ TABLE lt_gl_account_texts INTO ls_gl_account_text WITH KEY saknr = ls_gl_account-kstar.
+            IF sy-subrc EQ 0.
+              <fs_entity>-glaccounttext = ls_gl_account_text-txt20.
+            ENDIF.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->COUNTRIES_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_COUNTRY
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD countries_get_entityset.
+
+*   All countries in cy=urrent language
+    SELECT land1 AS countrykey landx AS countrytext INTO TABLE et_entityset FROM t005t WHERE spras = sy-langu.
+    SORT et_entityset ASCENDING BY countrytext.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->CREATE_TEXT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_OBJECT_ID                   TYPE        CHAR10
+* | [--->] IV_OBJECT_LINE                 TYPE        NUMC5(optional)
+* | [--->] IV_TEXT_TYPE                   TYPE        TDID
+* | [--->] IV_LANGU                       TYPE        SPRAS (default =SY-LANGU)
+* | [--->] IV_TEXT                        TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD create_text.
+
+
+    DATA: lt_line      TYPE TABLE OF tline,
+          ls_line      TYPE tline,
+          ls_tdheader  TYPE thead,
+          lv_object    TYPE tdobject.
+
+    DATA: lv_tdname    TYPE tdobname,
+          lv_langu     TYPE spras.
+
+    FIELD-SYMBOLS:
+          <fs_line>    TYPE tline.
+
+
+    IF iv_object_line IS SUPPLIED. " Item Notes
+      CONCATENATE iv_object_id iv_object_line INTO lv_tdname.
+      lv_object = 'EBAN'.
+    ELSE.                             " Header Note
+      MOVE iv_object_id TO lv_tdname.
+      lv_object = 'EBANH'.
+    ENDIF.
+
+    IF iv_langu IS INITIAL.
+      lv_langu = sy-langu.
+    ELSE.
+      lv_langu =  iv_langu.
+    ENDIF.
+
+* initialize the new text
+    CALL FUNCTION 'INIT_TEXT'
+      EXPORTING
+        id       = iv_text_type
+        language = iv_langu
+        name     = lv_tdname
+        object   = lv_object
+      IMPORTING
+        header   = ls_tdheader
+      TABLES
+        lines    = lt_line
+      EXCEPTIONS
+        OTHERS   = 1.
+    CHECK sy-subrc EQ 0.
+
+    DATA: lt_split    TYPE TABLE OF char40,
+    lr_split          TYPE REF TO char40,
+    lv_wa_str         TYPE string,
+    lv_len            TYPE int4.
+
+    SPLIT iv_text AT space INTO TABLE lt_split.
+
+    LOOP AT lt_split REFERENCE INTO lr_split.
+      lv_len = strlen( lv_wa_str ) + strlen( lr_split->* ).
+      IF lv_len LT 128.
+        CONCATENATE lv_wa_str lr_split->* INTO lv_wa_str SEPARATED BY space.
+      ELSE.
+        ls_line-tdline = lv_wa_str.
+        APPEND ls_line TO lt_line.
+        lv_wa_str = lr_split->*.
+      ENDIF.
+    ENDLOOP.
+    ls_line-tdline = lv_wa_str.
+    APPEND ls_line TO lt_line.
+
+    CALL FUNCTION 'SAVE_TEXT'
+      EXPORTING
+        header = ls_tdheader
+      TABLES
+        lines  = lt_line
+      EXCEPTIONS
+        OTHERS = 0.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->CURRENCIES_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_CURRENCY
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD currencies_get_entityset.
+
+* Fetch all currencies
+    SELECT waers AS currencyid  ktext AS currencytext INTO TABLE et_entityset FROM tcurt WHERE spras = sy-langu.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->DOCUMENTTYPES_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_DOCUMENTTYPE
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD documenttypes_get_entityset.
+
+    SELECT b~bsart AS documenttypeid b~batxt AS documenttypetext INTO TABLE et_entityset FROM
+                  t161 AS a INNER JOIN t161t AS b
+                  ON
+                  a~bstyp = b~bstyp AND
+                  a~bsart = b~bsart
+                  WHERE
+                  a~bstyp = 'B' AND
+                  b~spras = sy-langu.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_ADDRESS_INTO_PRINTFORM
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ADDRNUM                     TYPE        AD_ADDRNUM
+* | [<-()] RS_ADDRESS                     TYPE        /CONVRGNT/DELIVERY_ADDRESS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_address_into_printform.
+
+  DATA:
+*        lt_address                TYPE szadr_printform_table,
+        lv_nation                 TYPE ad_nation,
+*        lv_first                  TYPE xfeld,
+        lv_screen_variant         TYPE ad_scr_var,
+*        lv_sender_country         TYPE ad_ctry_fr,
+*        lv_country_line           TYPE xfeld,
+        lv_adrc_country           TYPE land1,
+*        lv_landx                  TYPE landx,
+*        lv_landx50                TYPE landx50,
+        lt_adrc                   TYPE STANDARD TABLE OF adrc,
+        lv_langu                  TYPE sy-langu,
+*        lv_address                TYPE string,
+*        lv_lines                  TYPE anzei,
+        lv_nation_space           TYPE xfeld,
+        lc_linetype_exclude       TYPE char20 VALUE '12345ADFNP'.
+
+  FIELD-SYMBOLS: <fs_address> TYPE szadr_printform_table_line.
+  FIELD-SYMBOLS: <ls_adrc>    TYPE adrc.
+
+
+  lv_langu = sy-langu.
+
+  IF iv_addrnum IS INITIAL.
+    RETURN.
+  ENDIF.
+
+* get the nation to find the correct address version
+  CALL FUNCTION 'ADDR_LANGUAGE_MAP_TO_VERSION'
+    EXPORTING
+      iv_language              = lv_langu
+      iv_application_component = 'BU_ADDRVERS_MAP'
+    IMPORTING
+      ev_nation                = lv_nation.
+  CLEAR: lv_nation_space.
+  IF lv_nation IS INITIAL.
+    lv_nation_space = 'X'.
+  ENDIF.
+
+* get individual or system set country screen
+  CALL FUNCTION 'ADDR_GET_COUNTRY_SCREEN'
+    EXPORTING
+      username       = sy-uname
+      nation         = lv_nation
+    IMPORTING
+      screen_variant = lv_screen_variant.
+
+* Get country of Addres
+  CLEAR: lv_adrc_country, lt_adrc.
+  CALL FUNCTION 'ADDR_SELECT_ADRC_SINGLE'
+    EXPORTING
+      addrnumber        = iv_addrnum
+    TABLES
+      et_adrc           = lt_adrc
+    EXCEPTIONS
+      address_not_exist = 1
+      parameter_error   = 2
+      internal_error    = 3
+      OTHERS            = 4.
+
+  LOOP AT lt_adrc ASSIGNING <ls_adrc>.
+    rs_address-name = <ls_adrc>-name1.
+    rs_address-house_num1 =  <ls_adrc>-house_num1.
+    rs_address-addressline1 = <ls_adrc>-street.
+    rs_address-city = <ls_adrc>-city1.
+    rs_address-postalcode = <ls_adrc>-post_code1.
+    rs_address-country = <ls_adrc>-country.
+  ENDLOOP.
+*  IF sy-subrc IS INITIAL.
+*    READ TABLE lt_adrc ASSIGNING <ls_adrc> WITH KEY nation = lv_nation.
+*    IF sy-subrc IS NOT INITIAL.
+*      READ TABLE lt_adrc ASSIGNING <ls_adrc> WITH KEY nation = space.
+*    ENDIF.
+*  ENDIF.
+*  IF <ls_adrc> IS ASSIGNED.
+*    lv_adrc_country = <ls_adrc>-country.
+*  ENDIF.
+
+** ----------------  Determine the "sender country"  ----------
+*  CLEAR: lv_sender_country.
+*
+** special logic for Japan:
+** use the Kanji version of address formatting if the screen variant 013 is set
+*  IF  lv_screen_variant EQ '013'
+*  AND lv_adrc_country   EQ 'JP'.
+*    lv_sender_country = 'JP'.
+*
+** else use the international version for the Japanese address with 4 address lines including country
+*  ELSEIF lv_adrc_country EQ 'JP'.
+*    lv_sender_country = '  '.
+*
+** for all other countries use the "domestic" version to avoid postal numbers like F-12345
+** and add the country name manually
+*  ELSE.
+*    lv_sender_country = lv_adrc_country.
+*  ENDIF.
+
+** ----------------- call FM for address editing ---------------
+*  CALL FUNCTION 'ADDRESS_INTO_PRINTFORM'
+*    EXPORTING
+*      address_type              = '1'
+*      address_number            = iv_addrnum
+*      street_has_priority       = 'X'
+*      receiver_language         = lv_langu
+*      iv_nation                 = lv_nation
+*      iv_nation_space           = lv_nation_space
+*      number_of_lines           = 4
+*      sender_country            = lv_sender_country
+*      language_for_country_name = lv_langu
+*      no_upper_case_for_city    = 'X'
+*    IMPORTING
+*      address_printform_table   = lt_address.
+*
+*  lv_first = abap_true.
+*  lv_country_line = abap_false.
+*  CLEAR lv_address.
+** -------- read only the relevant address lines ---------
+*  LOOP AT lt_address ASSIGNING <fs_address>.
+** do not read line types 12345ADFNP
+*    IF <fs_address>-line_type NA lc_linetype_exclude.
+*      IF lv_first = abap_true.
+*        lv_first = abap_false.
+*        lv_address = <fs_address>-address_line.
+*      ELSE.
+*        CONCATENATE lv_address '/' <fs_address>-address_line
+*        INTO lv_address SEPARATED BY space.
+*      ENDIF.
+*    ENDIF.
+*    IF <fs_address>-line_type EQ 'L'.
+*      lv_country_line = abap_true.
+*    ENDIF.
+*  ENDLOOP.
+*
+** if no country line was returned, add the country name manually in sy-langu
+** - use long name if provided
+*  IF lv_country_line EQ abap_false.
+*    SELECT SINGLE landx landx50 FROM t005t INTO (lv_landx, lv_landx50)
+*       WHERE spras EQ lv_langu
+*       AND   land1 EQ lv_adrc_country.
+*    IF sy-subrc IS INITIAL.
+*      IF lv_landx50 IS INITIAL.
+*        CONCATENATE lv_address '/' lv_landx INTO lv_address SEPARATED BY space.
+*      ELSE.
+*        CONCATENATE lv_address '/' lv_landx50 INTO lv_address SEPARATED BY space.
+*      ENDIF.
+*    ENDIF.
+*  ENDIF.
+*
+*  rv_address_string = lv_address.
+
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_CONCATENATED_NOTE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IS_NOTE_INFO                   TYPE        /CONVRGNT/NOTES
+* | [--->] IV_TYPE                        TYPE        TDID
+* | [--->] IV_TYPE_DESCR                  TYPE        TDTEXT
+* | [<---] ET_NOTES                       TYPE        /CONVRGNT/TT_NOTES
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method GET_CONCATENATED_NOTE.
+
+  DATA: ls_note             TYPE /convrgnt/notes,
+        lt_strings          TYPE TABLE OF string,
+        ls_defaults         TYPE bapidefaul,
+        ls_address          TYPE bapiaddr3 ,
+        lt_return           TYPE bapiret2_t.
+
+  DATA: lv_note             TYPE string,
+        lv_splitter_1       TYPE string,
+        lv_splitter_2       TYPE string,
+        lv_note_part        TYPE string,
+        lv_time             TYPE string,
+        lv_date(10)         TYPE c,
+        lv_tz               TYPE string,
+        lv_tabix            TYPE sy-tabix,                  "#EC NEEDED
+        lv_lines            TYPE i,                         "#EC NEEDED
+        lv_text             TYPE string,
+        lv_created_by_id    TYPE syuname,
+        lv_created_by_name  TYPE char40,
+        lv_created_at       TYPE tzntstmps,
+        lv_dummy            TYPE string,                    "#EC NEEDED
+        lv_delimiter        TYPE string.
+*----------------------------------------------------------------------*
+* Ex. of ApprovalNote with two approval entries
+* LV_NOTE = 'Hi Ian,#As discussed I will approve right away.#Best regards,#Iwan#(IVANM)#________#Please approve!#( IANE 15.02.2013 18:08:19 CET )'
+* Newest entry is the the first one, the oldest (=first) entry is the last one
+*----------------------------------------------------------------------*
+  lv_note = is_note_info-text .
+
+* Only for testing . . .
+* lv_delimiter = '#'.
+  lv_delimiter = cl_abap_char_utilities=>newline.
+
+*----------------------------------------------------------------------*
+* Some delimiters ...
+*----------------------------------------------------------------------*
+  IF lv_note IS NOT INITIAL.
+    CONCATENATE ')'
+                lv_delimiter  " %_NEWLINE
+                '________'
+                lv_delimiter  " %_NEWLINE
+         INTO lv_splitter_1.                     " ')#________#' -> '#' is CR
+
+    CONCATENATE lv_delimiter  " %_NEWLINE
+                '( '
+           INTO lv_splitter_2 RESPECTING BLANKS. " '#('          -> '#' is CR
+
+    SPLIT lv_note AT lv_splitter_1 INTO TABLE lt_strings. " ')#________#'
+
+*----------------------------------------------------------------------*
+* LT_STRINGS[1] = 'Hi Ian,#As discussed I will approve right away.#Best regards,#Iwan#(IVANM'
+* LT_STRINGS[2] = 'Please approve!#( IANE 15.02.2013 18:08:19 CET )'
+*----------------------------------------------------------------------*
+    lv_lines = LINES( lt_strings ).
+
+    LOOP AT lt_strings INTO lv_note_part.
+* [1]
+* LV_NOTE_PART = 'Hi Ian,#As discussed I will approve right away.#Best regards,#Iwan#(IVANM'
+*
+* [2]
+* LV_NOTE_PART =  'Please approve!#( IANE 15.02.2013 18:08:19 CET )'
+      lv_tabix = sy-tabix.
+
+      SPLIT lv_note_part AT lv_splitter_2 INTO lv_text lv_note_part. " '#('
+* [1]
+* LS_NOTE-TEXT = 'Hi Ian,#As discussed I will approve right away.#Best regards,#Iwan'
+* LV_NOTE_PART = 'IVANM'
+*
+* [2]
+* LS_NOTE-TEXT = 'Please approve!'
+* LV_NOTE_PART = ' IANE 15.02.2013 18:08:19 CET )'
+
+
+      SHIFT lv_text RIGHT DELETING TRAILING lv_delimiter.
+      SHIFT lv_text LEFT DELETING LEADING space.
+      SHIFT lv_note_part LEFT DELETING LEADING space.
+      SPLIT lv_note_part AT space INTO lv_created_by_id lv_date lv_time lv_tz lv_dummy.
+* [1]
+* LV_NOTE_PART = 'IVANM'
+* LV_CREATED_BY_ID = 'IVANM'  LV_DATE = ''  LV_TIME = ''  LV_TZ = ''  LV_DUMMY = ''
+*
+* [2]
+* LV_NOTE_PART = 'IANE 15.02.2013 18:08:19 CET )'
+* LV_CREATED_BY_ID = 'IANE'  LV_DATE = '15.02.2013'  LV_TIME = '18:08:19'  LV_TZ = 'CET'  LV_DUMMY = ')'
+
+* Through parsing we found something like 'IVANM' or 'IANE'
+      IF lv_created_by_id IS NOT INITIAL.
+* Get UserName from UserID
+        CALL FUNCTION 'BAPI_USER_GET_DETAIL'
+          EXPORTING
+            username  = lv_created_by_id
+          IMPORTING
+*            logondata = ls_logondata
+            defaults  = ls_defaults
+            address   = ls_address
+          TABLES
+            return    = lt_return.
+
+        IF lt_return IS INITIAL.
+          lv_created_by_name = ls_address-fullname.
+        ELSE.
+          "Currently no Error Handling
+        ENDIF.
+
+*  Get timestamp from char string: First date by usage of the users' datfm, then the time.
+        CALL METHOD get_timestamp
+          EXPORTING
+            iv_date_char  = lv_date
+            iv_time       = lv_time
+            iv_datfm      = ls_defaults-datfm
+            iv_tz         = lv_tz
+          IMPORTING
+            ev_time_stamp = lv_created_at.
+
+      ELSE.
+* No name found, then if the entry is the oldest (=first) one, maybe is done by the PR Requestor,
+* no direct information in the ApprovalNote on Creator and Date/Time
+* Checking if if the entry is the oldest (=first) one
+        lv_created_by_id   = is_note_info-created_by_id.
+        lv_created_by_name = is_note_info-created_by_name.
+        lv_created_at      = is_note_info-created_at.
+
+      ENDIF.
+
+      ls_note-object_id        = is_note_info-object_id .
+      ls_note-object_line      = is_note_info-object_line.
+      ls_note-type             = iv_type.
+      ls_note-type_descr       = iv_type_descr.
+      ls_note-created_by_id    = lv_created_by_id.
+      ls_note-created_by_name  = lv_created_by_name.
+      ls_note-created_at       = lv_created_at.
+      ls_note-text             = lv_text.
+      " Fill the NoteID ,with counter as we need a key.
+      ls_note-note_id          = get_noteid( ).
+      ls_note-note_is_approver_note =  abap_true.
+      APPEND ls_note TO et_notes.
+
+    ENDLOOP.
+  ENDIF.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_CONTROLLING_AREA
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RV_CONTROLLING_AREA            TYPE        KOKRS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_controlling_area.
+
+    "Check if user profile has controlling area mentioned. If yes, return that.
+    SELECT SINGLE parva INTO rv_controlling_area FROM usr05 WHERE bname = sy-uname AND parid = 'CAC'.
+
+    IF sy-subrc NE 0.
+    "If not then get controlling area from PA0105->PA0001->TKA02
+      SELECT SINGLE c~kokrs INTO rv_controlling_area FROM
+        ( pa0105 as a INNER JOIN pa0001 as b ON a~pernr = b~pernr ) INNER JOIN tka02 as c ON b~bukrs = c~bukrs
+        WHERE
+          a~subty = '0001' AND
+          a~usrid = sy-uname.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_DELIVERY_ADDRESS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ADDRNUM                     TYPE        AD_ADDRNUM
+* | [--->] IV_PLANT                       TYPE        WERKS_D
+* | [<---] ES_DELIVERY_ADDRESS            TYPE        /CONVRGNT/DELIVERY_ADDRESS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_delivery_address.
+
+  TYPES:
+    BEGIN OF type_s_plant,
+      adrnr TYPE t001w-adrnr,
+      name1 TYPE adrc-name1,
+    END OF type_s_plant.
+
+  DATA: ls_plant          TYPE type_s_plant,
+*        lv_plant_name     TYPE ad_name1,
+        lv_addrnum        TYPE ad_addrnum.
+*        ls_address        TYPE /convrgnt/delivery_address.
+
+*
+* This method expects either iv_addrnum or iv_plant as importing parameter.
+* If both fields are filled, iv_addrnum is selected to identify the address.
+
+* For identifying iv_addrnum, we expect that eban is checked [for PR].
+* The following fields provide the data in this order of sequence:
+* ADRNR (filled, if address is entered manually in me51n), ADRN2, KUNNR, EMLIF.
+
+
+  IF iv_addrnum IS NOT INITIAL.
+    lv_addrnum = iv_addrnum.
+  ENDIF.
+
+
+* If Address number is not given => Use Plant address as Delivery Address.
+* That is: Identify Address Number for given Plant ID.
+* In that Case identify Plant Name as well.
+  IF lv_addrnum IS INITIAL      AND
+     iv_plant   IS NOT INITIAL.
+
+    SELECT SINGLE t001w~adrnr adrc~name1                   "#EC *
+             FROM t001w AS t001w
+             INNER JOIN adrc AS adrc
+             ON adrc~addrnumber EQ t001w~adrnr
+             INTO CORRESPONDING FIELDS OF ls_plant
+             WHERE t001w~werks EQ iv_plant.
+
+    IF sy-subrc EQ 0.
+      lv_addrnum    = ls_plant-adrnr.
+*      lv_plant_name = ls_plant-name1.
+    ENDIF.
+
+  ENDIF.
+
+
+* Get Address String from the Address Number
+  IF lv_addrnum IS NOT INITIAL.
+    es_delivery_address = get_address_into_printform( lv_addrnum ).
+  ENDIF.
+
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_EXPANDED_PR_HEADER
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_PR_NUMBER                   TYPE        BANFN
+* | [<---] ER_ENTITY                      TYPE        DATA
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_expanded_pr_header.
+
+    DATA: BEGIN OF ls_pr_item,
+      banfn TYPE banfn,
+      bnfpo TYPE bnfpo,
+      bsart TYPE esart,
+      werks TYPE ewerk,
+      statu TYPE banst,
+      preis TYPE bapre,
+      peinh TYPE peinh,
+      menge TYPE bamng,
+      waers TYPE waers,
+         END OF ls_pr_item. ",
+*         lt_pr_items LIKE TABLE OF ls_pr_item.
+
+    DATA:
+          lv_amount    TYPE bapre,
+          lv_current_amount    TYPE bapre,
+          lv_count     TYPE i,
+          lv_pr_number TYPE banfn,
+          lv_chart_of_account TYPE ktopl,
+*          lv_bsart     TYPE esart,
+*          lv_status    TYPE banst,
+          lv_header_currency TYPE waers.
+
+    DATA: BEGIN OF ls_plant_text,
+            werks TYPE werks_d,
+            name1 TYPE name1,
+
+          END OF ls_plant_text,
+          lt_plant_text LIKE TABLE OF ls_plant_text.
+
+    DATA: BEGIN OF ls_material_text,
+            matnr TYPE matnr,
+            maktx TYPE maktx,
+          END OF ls_material_text,
+          lt_material_text LIKE TABLE OF ls_material_text.
+
+    DATA:   BEGIN OF ls_pur_group,
+              ekgrp TYPE ekgrp,
+              eknam TYPE eknam,
+            END OF ls_pur_group,
+            lt_pur_group LIKE TABLE OF ls_pur_group.
+
+    DATA: BEGIN OF ls_material_group,
+            matkl TYPE matkl,
+            wgbez TYPE wgbez,
+          END OF ls_material_group,
+          lt_material_groups LIKE TABLE OF ls_material_group.
+
+    DATA: BEGIN OF ls_account_assignment,
+            bnfpo TYPE bnfpo,
+            kostl TYPE kostl,
+            aufnr TYPE aufnr,
+          END OF ls_account_assignment.
+*          lt_account_assignments LIKE TABLE OF ls_account_assignment.
+
+    DATA: BEGIN OF ls_account_cat_text,
+            knttp TYPE knttp,
+            knttx TYPE knttx,
+          END OF ls_account_cat_text,
+          lt_account_cat_texts LIKE TABLE OF ls_account_cat_text.
+
+    DATA: BEGIN OF ls_cost_center_text,
+            kost1 TYPE kostl,
+            mctxt TYPE mctxt,
+          END OF ls_cost_center_text,
+          lt_cost_center_texts LIKE TABLE OF ls_cost_center_text.
+
+    DATA: BEGIN OF ls_order_text,
+            aufnr TYPE aufnr,
+            ktext TYPE ktext,
+          END OF ls_order_text,
+          lt_order_texts LIKE TABLE OF ls_order_text.
+
+    DATA: BEGIN OF ls_item_category_text,
+            pstyp TYPE pstyp,
+            ptext TYPE ptext_d,
+          END OF ls_item_category_text,
+          lt_item_category_texts LIKE TABLE OF ls_item_category_text.
+
+    DATA: BEGIN OF ls_document_type_text,
+            bsart TYPE bsart,
+            batxt TYPE batxt,
+          END OF ls_document_type_text,
+          lt_document_type_texts LIKE TABLE OF ls_document_type_text.
+
+    DATA: BEGIN OF ls_address,
+            itemno TYPE bnfpo,
+            adrnr TYPE adrnr_mm,
+            adrn2 TYPE adrn2,
+          END OF ls_address,
+          lt_address LIKE TABLE OF ls_address.
+
+    DATA: BEGIN OF ls_gl_account,
+          accountno TYPE saknr,
+          description TYPE txt20,
+      END OF ls_gl_account,
+      lt_gl_accounts LIKE TABLE OF ls_gl_account.
+
+    DATA: BEGIN OF ls_quantity_unit_text,
+            unit TYPE msehi,
+            unittext TYPE msehl,
+          END OF ls_quantity_unit_text,
+          lt_quantity_unit_texts LIKE TABLE OF ls_quantity_unit_text.
+
+    " Declaring the expanded entry container
+    DATA:BEGIN OF item.
+            INCLUDE TYPE /convrgnt/cl_pr_mpc=>ts_pritem.
+    DATA: notes    TYPE /convrgnt/cl_pr_mpc=>tt_note,
+          services TYPE /convrgnt/cl_pr_mpc=>tt_service,
+   END OF item.
+
+    DATA: ls_item        LIKE item.
+    DATA: BEGIN OF ls_expanded_entry.
+            INCLUDE TYPE /convrgnt/cl_pr_mpc=>ts_prheader.
+    DATA:   items LIKE TABLE OF item.
+    DATA:   notes TYPE /convrgnt/cl_pr_mpc=>tt_note,
+            attachments TYPE /convrgnt/cl_pr_mpc=>tt_attachment.
+    DATA: END OF ls_expanded_entry.
+
+    DATA: ls_delivery_address TYPE /convrgnt/delivery_address,
+        lt_notes       TYPE /convrgnt/tt_notes,
+        ls_note        TYPE /convrgnt/notes,
+        ls_entity_service     TYPE /convrgnt/cl_pr_mpc=>ts_service,
+        ls_entity_note        TYPE LINE OF /convrgnt/cl_pr_mpc=>tt_note,
+        ls_entity_attachment  TYPE LINE OF /convrgnt/cl_pr_mpc=>tt_attachment,
+        lt_attachments TYPE /convrgnt/t_attachments,
+        ls_attachments TYPE /convrgnt/attachments,
+        lv_addr_number TYPE ad_addrnum.
+
+    " Get Header first
+    ls_expanded_entry-prnumber = iv_pr_number.
+
+    "Fetch from BAPI
+    DATA:
+          ls_bapi_return             TYPE bapireturn,
+          lt_bapi_return             TYPE TABLE OF bapireturn,
+          ls_bapi_pr_item            TYPE bapieban,
+          lt_bapi_pr_items           TYPE TABLE OF bapieban,
+          ls_bapi_pr_account         TYPE bapiebkn,
+          lt_bapi_pr_accounts        TYPE TABLE OF bapiebkn,
+          ls_bapi_service_line       TYPE bapiesll,
+          lt_bapi_service_lines      TYPE TABLE OF bapiesll,
+          ls_bapi_service_limit      TYPE bapiesuh,
+          lt_bapi_service_limits     TYPE TABLE OF bapiesuh,
+          lt_bapi_service_accounts   TYPE TABLE OF bapieskl.
+*          ls_bapi_service_account    TYPE bapieskl.
+
+    lv_pr_number = ls_expanded_entry-prnumber.
+
+* External to internal number conversion PR Number
+    CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+      EXPORTING
+        input  = lv_pr_number
+      IMPORTING
+        output = lv_pr_number.
+
+    CALL FUNCTION 'BAPI_REQUISITION_GETDETAIL'
+      EXPORTING
+        number                         = lv_pr_number
+        account_assignment             = 'X'
+*       ITEM_TEXTS                     = ' '
+        services                       = 'X'
+*       SERVICE_TEXTS                  = ' '
+      TABLES
+        requisition_items              = lt_bapi_pr_items
+        requisition_account_assignment = lt_bapi_pr_accounts
+*       REQUISITION_TEXT               =
+        requisition_limits             = lt_bapi_service_limits
+*       REQUISITION_CONTRACT_LIMITS    =
+        requisition_services           = lt_bapi_service_lines
+*       REQUISITION_SERVICES_TEXTS     =
+        requisition_srv_accass_values  = lt_bapi_service_accounts
+        return                         = lt_bapi_return.
+
+    " Note: All text tables are buffered. Hence Inner Join not used since it will not be useful.
+    IF lt_bapi_pr_items[] IS NOT INITIAL.
+
+*     Delivery Address
+      SELECT bnfpo AS itmno adrnr adrn2 INTO TABLE lt_address FROM eban
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+          WHERE
+            banfn = lt_bapi_pr_items-preq_no.
+
+*         Item Category Texts
+      SELECT pstyp ptext INTO TABLE lt_item_category_texts FROM t163y
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+          WHERE
+            spras = sy-langu AND
+            pstyp = lt_bapi_pr_items-item_cat.
+
+*         Unit texts
+      SELECT msehi AS unit msehl AS unittext FROM t006a INTO TABLE lt_quantity_unit_texts
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+          WHERE
+            spras = sy-langu AND
+            msehi = lt_bapi_pr_items-unit.
+
+*         Plant texts
+      SELECT werks name1 FROM t001w INTO TABLE lt_plant_text
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+        WHERE
+          werks = lt_bapi_pr_items-plant.
+
+*     GL acocount texts
+      READ TABLE lt_bapi_pr_items INTO ls_bapi_pr_item INDEX 1.
+      "First get the Companycode from plant. From companycode get chart of account
+      SELECT SINGLE ktopl INTO lv_chart_of_account FROM t001 WHERE bukrs EQ
+             ( SELECT bukrs FROM t001k WHERE bwkey = ls_bapi_pr_item-plant ).
+
+      IF sy-subrc EQ 0 AND lt_bapi_pr_accounts IS NOT INITIAL.
+        "Get GL account and description
+        SELECT saknr AS accountno txt20 AS description INTO TABLE lt_gl_accounts
+                                          FROM skat
+                                          FOR ALL ENTRIES IN lt_bapi_pr_accounts
+                                          WHERE
+                                                ktopl = lv_chart_of_account AND
+                                                saknr = lt_bapi_pr_accounts-g_l_acct AND
+                                                spras = sy-langu .
+      ENDIF.
+
+*         Material text
+      SELECT matnr maktx FROM makt INTO TABLE lt_material_text
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+        WHERE
+          matnr = lt_bapi_pr_items-material.
+
+*         Material Group Text
+      SELECT matkl wgbez FROM t023t INTO TABLE lt_material_groups
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+        WHERE
+          spras = sy-langu AND
+          matkl = lt_bapi_pr_items-mat_grp.
+
+      " Get all purchasing group texts
+      SELECT ekgrp eknam INTO TABLE lt_pur_group FROM t024
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+           WHERE
+             ekgrp = lt_bapi_pr_items-pur_group.
+
+      " Get all account assigment category texts
+      SELECT knttp knttx INTO TABLE lt_account_cat_texts FROM t163i
+        FOR ALL ENTRIES IN lt_bapi_pr_items
+          WHERE
+            spras = sy-langu AND
+            knttp = lt_bapi_pr_items-acctasscat.
+
+      " Get Document text
+      SELECT bsart batxt INTO TABLE lt_document_type_texts FROM t161t
+         FOR ALL ENTRIES IN lt_bapi_pr_items
+            WHERE
+              spras = sy-langu AND
+              bsart = lt_bapi_pr_items-doc_type AND
+              bstyp = lt_bapi_pr_items-doc_cat.
+
+      " Get cost center texts
+      IF lt_bapi_pr_accounts[] IS NOT INITIAL.
+        SELECT kost1 mctxt INTO TABLE lt_cost_center_texts FROM m_kostn
+          FOR ALL ENTRIES IN lt_bapi_pr_accounts
+            WHERE
+              kost1 = lt_bapi_pr_accounts-cost_ctr.
+
+        " Get order texts
+        SELECT aufnr ktext INTO TABLE lt_order_texts FROM m_ordea
+          FOR ALL ENTRIES IN lt_bapi_pr_accounts
+            WHERE
+              aufnr = lt_bapi_pr_accounts-order_no.
+      ENDIF.
+
+    ENDIF.
+    READ TABLE lt_bapi_pr_items INTO ls_bapi_pr_item INDEX 1.
+    lv_header_currency = get_plant_currency( ls_bapi_pr_item-plant ).
+
+    "   Document category
+    READ TABLE lt_document_type_texts INTO ls_document_type_text INDEX 1.
+    IF sy-subrc EQ 0.
+      ls_expanded_entry-documenttype = ls_document_type_text-bsart.
+      ls_expanded_entry-documenttypetext = ls_document_type_text-batxt.
+    ENDIF.
+
+    " Delete items not created by me
+    DELETE lt_bapi_pr_items WHERE created_by NE sy-uname.
+
+    LOOP AT lt_bapi_pr_items INTO ls_bapi_pr_item.
+
+      lv_count = lv_count + 1.
+      lv_current_amount = ls_bapi_pr_item-quantity * ls_bapi_pr_item-c_amt_bapi / ls_bapi_pr_item-price_unit.
+
+      IF lv_header_currency NE ls_bapi_pr_item-currency.
+        "Item has a different currency. Do currency conversion
+        CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'
+          EXPORTING
+            date             = sy-datum
+            foreign_amount   = lv_current_amount
+            foreign_currency = ls_bapi_pr_item-currency
+            local_currency   = lv_header_currency
+          IMPORTING
+            local_amount     = lv_current_amount
+          EXCEPTIONS
+            no_rate_found    = 1
+            overflow         = 2
+            no_factors_found = 3
+            no_spread_found  = 4
+            derived_2_times  = 5
+            OTHERS           = 6.
+      ENDIF.
+
+      lv_amount = lv_amount + lv_current_amount.
+*      lv_bsart = ls_bapi_pr_item-doc_type.
+*      lv_status = ls_bapi_pr_item-proc_stat.
+
+      AT END OF preq_no.
+        ls_expanded_entry-prnumber = ls_expanded_entry-prnumber.
+        ls_expanded_entry-materialcount = lv_count.
+        ls_expanded_entry-value = lv_amount.
+        ls_expanded_entry-currency = lv_header_currency.
+        CLEAR: lv_count, lv_amount.
+      ENDAT.
+
+      " Fill all items
+      ls_item-itemnumber = ls_bapi_pr_item-preq_item.
+      ls_item-description = ls_bapi_pr_item-short_text.
+
+      ls_item-itemcategory = ls_bapi_pr_item-item_cat.
+      READ TABLE lt_item_category_texts INTO ls_item_category_text WITH KEY pstyp = ls_item-itemcategory.
+      IF sy-subrc EQ 0.
+        ls_item-itemcategorytext = ls_item_category_text-ptext.
+      ENDIF.
+
+      ls_item-materialnumber = ls_bapi_pr_item-material.
+      READ TABLE lt_material_text INTO ls_material_text WITH KEY matnr = ls_item-materialnumber.
+      IF sy-subrc EQ 0.
+        ls_item-materialtext = ls_material_text-maktx.
+      ENDIF.
+
+      ls_item-materialgroup = ls_bapi_pr_item-mat_grp.
+      READ TABLE lt_material_groups INTO ls_material_group WITH KEY matkl = ls_item-materialgroup.
+      IF sy-subrc EQ 0.
+        ls_item-materialgrouptext = ls_material_group-wgbez.
+      ENDIF.
+
+      ls_item-quantity = ls_bapi_pr_item-quantity.
+
+      ls_item-quantityunit = ls_bapi_pr_item-unit.
+      READ TABLE lt_quantity_unit_texts INTO ls_quantity_unit_text WITH KEY unit = ls_item-quantityunit.
+      IF sy-subrc EQ 0.
+        ls_item-quantityunittext = ls_quantity_unit_text-unittext.
+      ENDIF.
+
+      ls_item-materialgroup = ls_bapi_pr_item-mat_grp.
+      ls_item-unitprice = ls_bapi_pr_item-c_amt_bapi.  "Valuation Price
+      ls_item-unitpricecurrency = ls_bapi_pr_item-currency.
+      ls_item-total = ls_bapi_pr_item-quantity * ls_bapi_pr_item-c_amt_bapi.
+      ls_item-totalcurrency = ls_bapi_pr_item-currency.
+      ls_item-requirementtrackingnumber = ls_bapi_pr_item-trackingno.
+
+      ls_item-plant = ls_bapi_pr_item-plant.
+      READ TABLE lt_plant_text INTO ls_plant_text WITH KEY werks = ls_item-plant.
+      IF sy-subrc EQ 0.
+        ls_item-planttext = ls_plant_text-name1.
+      ENDIF.
+
+      ls_item-deliverydate = ls_bapi_pr_item-deliv_date.
+
+      ls_item-purchasinggroup = ls_bapi_pr_item-pur_group.
+      READ TABLE lt_pur_group INTO ls_pur_group WITH KEY ekgrp = ls_item-purchasinggroup.
+      IF sy-subrc EQ 0.
+        ls_item-purchasinggrouptext = ls_pur_group-eknam.
+      ENDIF.
+
+      ls_item-accountassobjecttype = ls_bapi_pr_item-acctasscat.
+      READ TABLE lt_account_cat_texts INTO ls_account_cat_text WITH KEY knttp = ls_item-accountassobjecttype.
+      IF sy-subrc EQ 0.
+        ls_item-accountassobjecttext = ls_account_cat_text-knttx.
+      ENDIF.
+
+      "     Get account assignment object
+      READ TABLE lt_bapi_pr_accounts INTO ls_bapi_pr_account WITH KEY preq_item =  ls_item-itemnumber.
+      " GL account number
+      ls_item-glaccountno = ls_bapi_pr_account-g_l_acct.
+      " GL account text
+      READ TABLE lt_gl_accounts INTO ls_gl_account WITH KEY accountno = ls_item-glaccountno.
+      IF sy-subrc EQ 0.
+        ls_item-glaccounttext = ls_gl_account-description.
+      ENDIF.
+      IF sy-subrc EQ 0.
+        IF ( ls_item-accountassobjecttype = 'K' ).  "If it is a cost center assignment
+          ls_item-accountassvalue = ls_bapi_pr_account-cost_ctr.
+          " Read cost center text
+          READ TABLE lt_cost_center_texts INTO ls_cost_center_text WITH KEY kost1 = ls_item-accountassvalue.
+          IF sy-subrc EQ 0.
+            ls_item-accountassvaluetext = ls_cost_center_text-mctxt.
+          ENDIF.
+        ELSE. "Only other option is order
+          ls_item-accountassvalue = ls_bapi_pr_account-order_no.
+          " Read order text
+          READ TABLE lt_order_texts INTO ls_order_text WITH KEY aufnr = ls_item-accountassvalue.
+          IF sy-subrc EQ 0.
+            ls_item-accountassvaluetext = ls_order_text-ktext.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+
+*      " Get Item level Notes
+*      CALL METHOD me->get_notes
+*        EXPORTING
+*          iv_object_id   = iv_pr_number
+*          iv_object_line = ls_bapi_pr_item-preq_item
+**         iv_app_type    = 'PR'
+**         iv_langu       = SY-LANGU
+*        RECEIVING
+*          et_notes       = lt_notes.
+*
+*      LOOP AT lt_notes INTO ls_note.
+*        ls_entity_note-id  = ls_note-note_id.
+*        ls_entity_note-notetype = ls_note-type.
+*        ls_entity_note-notetypetext = ls_note-type_descr.
+*        ls_entity_note-createdat  = ls_note-created_at.
+*        ls_entity_note-createdby = ls_note-created_by_id.
+*        ls_entity_note-createdbyname = ls_note-created_by_name.
+*        ls_entity_note-notetext = ls_note-text.
+*        APPEND ls_entity_note TO ls_item-notes.
+*        CLEAR ls_entity_note.
+*      ENDLOOP.
+
+      READ TABLE lt_address INTO ls_address WITH KEY itemno = ls_bapi_pr_item-preq_item.
+      IF sy-subrc EQ 0.
+        IF ls_address-adrnr IS INITIAL.
+          lv_addr_number = ls_address-adrn2.
+        ELSE.
+          lv_addr_number = ls_address-adrnr.
+        ENDIF.
+      ENDIF.
+
+      IF lv_addr_number IS NOT INITIAL.
+        ls_item-explicitdeliveryaddress = abap_true.  "If address number was found, it means that delivery address was explicitly mentioned
+      ENDIF.
+
+      CALL METHOD get_delivery_address
+        EXPORTING
+          iv_addrnum          = lv_addr_number
+          iv_plant            = ls_bapi_pr_item-plant
+        IMPORTING
+          es_delivery_address = ls_delivery_address.
+
+      MOVE-CORRESPONDING ls_delivery_address TO ls_item-deliveryaddress.
+
+*     If item is of type 'Service', then get services
+      READ TABLE lt_bapi_service_lines INTO ls_bapi_service_line WITH KEY pckg_no = ls_bapi_pr_item-pckg_no.
+      IF sy-subrc EQ 0.
+        LOOP AT lt_bapi_service_lines INTO ls_bapi_service_line WHERE pckg_no = ls_bapi_service_line-subpckg_no.
+          ls_entity_service-id = ls_bapi_service_line-ext_line.
+          ls_entity_service-description = ls_bapi_service_line-short_text.
+          ls_entity_service-quantity = ls_bapi_service_line-quantity.
+          ls_entity_service-grossvalue = ls_bapi_service_line-gross_val.
+          ls_entity_service-uom = ls_bapi_service_line-uom_iso.
+          APPEND ls_entity_service TO ls_item-services.
+        ENDLOOP.
+      ENDIF.
+
+*     Get overall Limit
+      READ TABLE lt_bapi_service_limits INTO ls_bapi_service_limit INDEX 1.
+      IF sy-subrc EQ 0.
+        ls_item-overalllimit = ls_bapi_service_limit-limit.
+      ENDIF.
+
+      APPEND ls_item TO ls_expanded_entry-items.
+      CLEAR ls_item.
+    ENDLOOP.
+
+    " Get Notes
+    CALL METHOD me->get_notes
+      EXPORTING
+        iv_object_id = iv_pr_number
+      RECEIVING
+        et_notes     = lt_notes.
+
+    LOOP AT lt_notes INTO ls_note.
+      ls_entity_note-id  = ls_note-note_id.
+      ls_entity_note-notetype = ls_note-type.
+      ls_entity_note-notetypetext = ls_note-type_descr.
+      ls_entity_note-createdat  = ls_note-created_at.
+      ls_entity_note-createdby = ls_note-created_by_id.
+      ls_entity_note-createdbyname = ls_note-created_by_name.
+      ls_entity_note-notetext = ls_note-text.
+      APPEND ls_entity_note TO ls_expanded_entry-notes.
+    ENDLOOP.
+
+    " Get Attachments
+    CALL METHOD me->get_header_gos_attachments
+      EXPORTING
+        iv_doc_number  = iv_pr_number
+*       iv_doc_type    = 'PR'
+      IMPORTING
+        et_attachments = lt_attachments.
+
+    LOOP AT lt_attachments INTO ls_attachments.
+      ls_entity_attachment-id = ls_attachments-attach_guid.
+      ls_entity_attachment-filename = ls_attachments-description. "ls_attachments-file_name.
+      ls_entity_attachment-createdat = ls_attachments-created_at.
+      ls_entity_attachment-createdby = ls_attachments-created_by_id.
+      ls_entity_attachment-createdbyname = ls_attachments-created_by_name.
+      ls_entity_attachment-mime_type = ls_attachments-mime_type.
+      ls_entity_attachment-filesize = ls_attachments-file_size.
+      ls_entity_attachment-filedescription = ls_attachments-description.
+      APPEND ls_entity_attachment TO ls_expanded_entry-attachments.
+      CLEAR ls_entity_attachment.
+    ENDLOOP.
+
+    copy_data_to_ref(
+      EXPORTING
+        is_data = ls_expanded_entry
+      CHANGING
+        cr_data = er_entity ).
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_HEADER_GOS_ATTACHMENTS
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_DOC_NUMBER                  TYPE        CHAR10
+* | [--->] IV_DOC_TYPE                    TYPE        CHAR2 (default ='PR')
+* | [<---] ET_ATTACHMENTS                 TYPE        /CONVRGNT/T_ATTACHMENTS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_header_gos_attachments.
+
+  DATA: ls_doc_data     TYPE sofolenti1,
+        ls_docid        TYPE sofolenti1-doc_id,
+        ls_attachment   TYPE /convrgnt/attachments,
+        lt_links        TYPE obl_t_link,
+        ls_filter       TYPE sofilteri1,
+        ls_links        TYPE obl_s_link,
+        ls_lporb        TYPE sibflporb.
+
+  DATA: lv_date         TYPE string.
+
+
+  ls_lporb-instid = iv_doc_number.
+  ls_lporb-catid = 'BO'.
+
+  CASE iv_doc_type.
+    WHEN 'PO'.
+      ls_lporb-typeid = 'BUS2012'.
+    WHEN 'PR'.
+      ls_lporb-typeid = 'BUS2105'.
+    WHEN OTHERS.
+      EXIT.
+  ENDCASE.
+
+  TRY      .
+      CALL METHOD cl_binary_relation=>read_links_of_binrel
+        EXPORTING
+          is_object   = ls_lporb
+          ip_relation = 'ATTA'
+          ip_role     = 'GOSAPPLOBJ'
+        IMPORTING
+          et_links    = lt_links.
+
+    CATCH cx_obl_parameter_error .                      "#EC NO_HANDLER
+    CATCH cx_obl_internal_error .                       "#EC NO_HANDLER
+    CATCH cx_obl_model_error .                          "#EC NO_HANDLER
+  ENDTRY.
+
+
+
+  ls_filter-send_info  = 'X'.
+  ls_filter-no_content = 'X'.
+
+  LOOP AT lt_links INTO ls_links.
+
+    CLEAR : ls_docid, ls_doc_data, ls_attachment.
+
+    ls_docid = ls_links-instid_b.
+
+    CALL FUNCTION 'SO_DOCUMENT_READ_API1'
+      EXPORTING
+        document_id                = ls_docid
+        filter                     = ls_filter
+      IMPORTING
+        document_data              = ls_doc_data
+      EXCEPTIONS
+        document_id_not_exist      = 1
+        operation_no_authorization = 2
+        x_error                    = 3
+        OTHERS                     = 4.
+    IF sy-subrc EQ 0.
+
+      ls_attachment-object_id = iv_doc_number.
+      ls_attachment-attach_guid = ls_docid.
+      ls_attachment-description = ls_doc_data-obj_descr.
+
+      SET LOCALE LANGUAGE sy-langu.
+      ls_attachment-file_name = ls_doc_data-obj_descr.
+      CONCATENATE ls_attachment-file_name '.' ls_doc_data-obj_type INTO ls_attachment-file_name.
+      ls_attachment-created_by_id = ls_doc_data-creat_name.
+      ls_attachment-created_by_name = ls_doc_data-creat_fnam.
+      CONCATENATE ls_doc_data-creat_date ls_doc_data-creat_time INTO lv_date.
+      ls_attachment-created_at = lv_date.
+      ls_attachment-is_gos_attachment = abap_true.
+      ls_attachment-file_size = ls_doc_data-doc_size.
+      SHIFT ls_attachment-file_size  LEFT DELETING LEADING '0'.
+* compute mimetype
+      CALL FUNCTION 'SDOK_MIMETYPE_GET'
+        EXPORTING
+          extension = ls_doc_data-obj_type
+        IMPORTING
+          mimetype  = ls_attachment-mime_type.
+
+      APPEND ls_attachment TO et_attachments.
+
+    ELSE.
+      "Error handling
+    ENDIF.
+  ENDLOOP.
+
+
+
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method /CONVRGNT/CL_PR_DPC_EXT->GET_NOTEID
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] RV_NOTEID                      TYPE        CHAR3
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method GET_NOTEID.
+
+  IF gv_counter IS INITIAL.
+    gv_counter = '100'.
+    rv_noteid  = gv_counter.
+  ELSE.
+    gv_counter = gv_counter + 0001.
+    SHIFT gv_counter LEFT DELETING LEADING '0'.
+    rv_noteid  = gv_counter.
+  ENDIF.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_NOTES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_OBJECT_ID                   TYPE        CHAR10
+* | [--->] IV_OBJECT_LINE                 TYPE        NUMC5(optional)
+* | [--->] IV_APP_TYPE                    TYPE        CHAR2 (default ='PR')
+* | [--->] IV_LANGU                       TYPE        SPRAS (default =SY-LANGU)
+* | [<-()] ET_NOTES                       TYPE        /CONVRGNT/TT_NOTES
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_notes.
+    DATA: lt_sel_thead    TYPE TABLE OF thead.
+
+    DATA: lv_tdname    TYPE tdobname,
+          lv_langu     TYPE spras,
+          lv_object_type TYPE tdobject.
+    DATA: lv_text_type_description TYPE tdtext.
+
+    DATA: ls_note_info  TYPE /convrgnt/notes.
+
+    FIELD-SYMBOLS :
+          <fs_text_type>           TYPE thead.
+
+    IF iv_object_line IS SUPPLIED. " Item Notes
+      CONCATENATE iv_object_id iv_object_line INTO lv_tdname.
+    ELSE.                             " Header Note
+      MOVE iv_object_id TO lv_tdname.
+    ENDIF.
+
+    IF iv_langu IS INITIAL.
+      lv_langu = sy-langu.
+    ELSE.
+      lv_langu =  iv_langu.
+    ENDIF.
+
+    IF iv_app_type EQ 'PR'.
+
+      IF iv_object_line IS SUPPLIED.  " Item
+        lv_object_type = 'EBAN'.
+
+      ELSE. " Header
+        lv_object_type = 'EBANH'.
+
+      ENDIF.
+    ELSEIF iv_app_type EQ 'PO'.
+
+      IF iv_object_line IS SUPPLIED.  " Item
+        lv_object_type = 'EKPO'.
+      ELSE. " Header
+        lv_object_type = 'EKKO'.
+      ENDIF.
+    ENDIF.
+
+* read all textheaders
+    CALL FUNCTION 'SELECT_TEXT'
+      EXPORTING
+        database_only = 'X'
+        object        = lv_object_type
+        name          = lv_tdname
+        id            = '*   '
+        language      = lv_langu
+      TABLES
+        selections    = lt_sel_thead.
+
+* Get all note types
+    DATA: BEGIN OF ls_note_type,
+          tdobject TYPE tdobject,
+          tdid     TYPE tdid,
+          tdtext   TYPE tdtext,
+      END OF ls_note_type,
+      lt_note_types LIKE TABLE OF ls_note_type.
+
+    SELECT tdobject tdid tdtext INTO TABLE lt_note_types FROM ttxit
+        WHERE
+          tdobject = lv_object_type
+      AND tdspras = sy-langu.
+
+    LOOP AT lt_sel_thead ASSIGNING <fs_text_type>.
+      CLEAR lv_text_type_description .
+
+      READ TABLE lt_note_types INTO ls_note_type WITH KEY tdobject = lv_object_type tdid = <fs_text_type>-tdid.
+
+      IF  lv_object_type = 'EBANH'.
+        CALL METHOD get_text
+          EXPORTING
+            iv_object_id   = iv_object_id
+*           iv_object_line = iv_object_line
+            iv_text_object = lv_object_type
+            iv_text_type   = <fs_text_type>-tdid
+            iv_type_descr  = ls_note_type-tdtext
+            iv_langu       = iv_langu
+          RECEIVING
+            rs_note_info   = ls_note_info.
+      ELSE.
+        CALL METHOD get_text
+          EXPORTING
+            iv_object_id   = iv_object_id
+            iv_object_line = iv_object_line
+            iv_text_object = lv_object_type
+            iv_text_type   = <fs_text_type>-tdid
+            iv_type_descr  = ls_note_type-tdtext
+            iv_langu       = iv_langu
+          RECEIVING
+            rs_note_info   = ls_note_info.
+      ENDIF.
+
+      IF ls_note_info-text IS NOT INITIAL.
+        APPEND ls_note_info TO et_notes.
+      ENDIF.
+
+    ENDLOOP.
+
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_PLANT_CURRENCY
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_PLANT                       TYPE        WERKS_D
+* | [<-()] RV_CURRENCY                    TYPE        WAERS
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_plant_currency.
+
+    SELECT SINGLE c~waers FROM ( ( t001 AS c
+                          INNER JOIN t001k AS k ON c~bukrs = k~bukrs )
+                          INNER JOIN t001w AS w ON w~bwkey = k~bwkey ) "#EC CI_BUFFJOIN
+                          INTO rv_currency
+                          WHERE w~werks = iv_plant.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_TEXT
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_OBJECT_ID                   TYPE        CHAR10
+* | [--->] IV_OBJECT_LINE                 TYPE        NUMC5(optional)
+* | [--->] IV_TEXT_OBJECT                 TYPE        TDOBJECT
+* | [--->] IV_TEXT_TYPE                   TYPE        TDID
+* | [--->] IV_TYPE_DESCR                  TYPE        TDTEXT
+* | [--->] IV_LANGU                       TYPE        SPRAS (default =SY-LANGU)
+* | [<-()] RS_NOTE_INFO                   TYPE        /CONVRGNT/NOTES
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_text.
+
+
+    DATA: lt_line      TYPE TABLE OF tline,
+          ls_tdheader  TYPE thead.
+
+    DATA: lv_tdname    TYPE tdobname,
+          lv_langu     TYPE spras,
+          lv_text      TYPE string.
+
+    FIELD-SYMBOLS:
+          <fs_line>    TYPE tline.
+
+
+    IF iv_object_line IS SUPPLIED. " Item Notes
+      CONCATENATE iv_object_id iv_object_line INTO lv_tdname.
+    ELSE.                             " Header Note
+      MOVE iv_object_id TO lv_tdname.
+    ENDIF.
+
+    IF iv_langu IS INITIAL.
+      lv_langu = sy-langu.
+    ELSE.
+      lv_langu =  iv_langu.
+    ENDIF.
+
+    CALL FUNCTION 'READ_TEXT'
+      EXPORTING
+        id                      = iv_text_type
+        language                = lv_langu
+        name                    = lv_tdname
+        object                  = iv_text_object
+      IMPORTING
+        header                  = ls_tdheader
+      TABLES
+        lines                   = lt_line
+      EXCEPTIONS
+        id                      = 1
+        language                = 2
+        name                    = 3
+        not_found               = 4
+        object                  = 5
+        reference_check         = 6
+        wrong_access_to_archive = 7
+        OTHERS                  = 8.
+    IF sy-subrc EQ 0.
+      LOOP AT lt_line ASSIGNING <fs_line>.
+        CONCATENATE lv_text <fs_line>-tdline INTO lv_text SEPARATED BY space.
+      ENDLOOP.
+      SHIFT lv_text LEFT DELETING LEADING space.
+
+      rs_note_info-object_id       = iv_object_id.
+      rs_note_info-object_line     = iv_object_line.
+      rs_note_info-note_id         = get_noteid( ).
+      rs_note_info-type            = iv_text_type.
+      rs_note_info-type_descr      = iv_type_descr.
+      rs_note_info-text            = lv_text.
+      rs_note_info-created_by_id   = ls_tdheader-tdfuser.
+      rs_note_info-created_at      = build_datetime( iv_date = ls_tdheader-tdfdate iv_time = ls_tdheader-tdftime ).
+      rs_note_info-created_by_name = get_user_name_from_id( iv_user_id   = rs_note_info-created_by_id ).
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_TIMESTAMP
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_DATE_CHAR                   TYPE        CHAR10(optional)
+* | [--->] IV_DATE                        TYPE        DATS(optional)
+* | [--->] IV_TIME                        TYPE        STRING
+* | [--->] IV_DATFM                       TYPE        XUDATFM
+* | [--->] IV_TZ                          TYPE        STRING
+* | [<---] EV_TIME_STAMP                  TYPE        TIMESTAMP
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_timestamp.
+
+  DATA: lv_datint     TYPE dats,
+        lv_datfmused  TYPE xudatfm,
+        lv_timint     TYPE syuzeit,
+        lv_tz         TYPE timezone.
+
+  IF iv_tz IS NOT INITIAL.
+    lv_tz = iv_tz.
+  ELSE.
+    lv_tz = 'UTC'.
+  ENDIF.
+
+  IF iv_date_char IS SUPPLIED.
+    CALL 'DATE_CONV_EXT_TO_INT' ID 'DATEXT'     FIELD iv_date_char "#EC CI_CCALL
+                                ID 'DATINT'     FIELD lv_datint
+                                ID 'DATFORM'    FIELD lv_datfmused
+                                ID 'DATFORMDES' FIELD iv_datfm.
+  ELSEIF iv_date  IS SUPPLIED.
+    lv_datint = iv_date.
+  ENDIF.
+  IF lv_datint IS INITIAL.
+    lv_datint = iv_date.
+  ENDIF.
+
+  CALL FUNCTION 'CONVERT_TIME_INPUT'
+    EXPORTING
+      input                     = iv_time
+      plausibility_check        = 'X'
+    IMPORTING
+      output                    = lv_timint
+    EXCEPTIONS
+      plausibility_check_failed = 1
+      wrong_format_in_input     = 2
+      OTHERS                    = 3.
+  IF sy-subrc EQ 0.
+    CONVERT DATE lv_datint TIME lv_timint INTO TIME STAMP ev_time_stamp TIME ZONE lv_tz.
+  ENDIF.
+
+
+
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GET_USER_NAME_FROM_ID
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_USER_ID                     TYPE        SYUNAME
+* | [<-()] RV_USER_NAME                   TYPE        TEXT80
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+METHOD get_user_name_from_id.
+
+  DATA:
+        ls_address     TYPE addr3_val,
+        lv_nameformat  TYPE ad_format,
+        lv_namcountry  TYPE ad_namctry,
+        ls_name_fields TYPE name_parts.
+
+
+  IF iv_user_id IS INITIAL.
+    " Nothing to be done
+    RETURN.
+  ENDIF.
+
+  CALL FUNCTION 'SUSR_USER_ADDRESS_READ'
+    EXPORTING
+      user_name              = iv_user_id
+    IMPORTING
+      user_address           = ls_address
+    EXCEPTIONS
+      user_address_not_found = 1
+      OTHERS                 = 2.
+
+  IF sy-subrc <> 0.
+    RETURN. " Nothing to do.
+  ENDIF.
+
+
+  IF ls_address-name_text IS NOT INITIAL.
+    " This is straightforward.
+    rv_user_name = ls_address-name_text.
+
+  ELSE.
+    " Fallback. Should ideally not happen.
+
+    IF ls_address-namcountry IS INITIAL.
+      RETURN.   " Name Country is required.
+    ENDIF.
+
+    lv_namcountry = ls_address-namcountry.
+    IF ls_address-nameformat IS NOT INITIAL.
+      lv_nameformat = ls_address-nameformat.
+    ELSE.
+      SELECT SINGLE nmfmt FROM t005 INTO lv_nameformat WHERE land1 = lv_namcountry.
+    ENDIF.
+
+    IF lv_nameformat IS INITIAL.
+      RETURN.   " and Name Format is required.
+    ENDIF.
+
+    ls_name_fields-title      = ls_address-title_p.
+    ls_name_fields-name_first = ls_address-name_first.
+    ls_name_fields-name_last  = ls_address-name_last.
+    ls_name_fields-name2      = ls_address-name2_p.
+    ls_name_fields-namemiddle = ls_address-namemiddle.
+    ls_name_fields-name_last2 = ls_address-name_last2.
+
+    CALL FUNCTION 'ADDR_PERSON_NAME_FORMAT'
+      EXPORTING
+        name_format          = lv_nameformat
+        name_country         = lv_namcountry
+        name_fields          = ls_name_fields
+      IMPORTING
+        formatted_name       = rv_user_name
+      EXCEPTIONS
+        country_not_exist    = 1
+        language_not_exist   = 2
+        nameformat_not_exist = 3
+        OTHERS               = 4.
+
+    IF sy-subrc <> 0.
+      " Error Handling.
+    ENDIF.
+
+  ENDIF.
+
+
+ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->GLACCOUNTS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_GLACCOUNT
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD glaccounts_get_entityset.
+
+    DATA: lv_search_string          TYPE string,
+          lv_cost_center            TYPE kostl,
+          lv_company_code           TYPE bukrs,
+          lv_order                  TYPE aufnr,
+          lv_chart_of_account       TYPE ktopl,
+          lv_message                TYPE string.
+
+    DATA: ltr_gl_name               TYPE RANGE OF txt20_skat,
+          lsr_gl_name               LIKE LINE OF ltr_gl_name.
+
+    DATA: ltr_search_string         TYPE RANGE OF mcds1,
+          lsr_search_string         LIKE LINE OF ltr_search_string.
+
+    DATA lt_filter_select_options TYPE /iwbep/t_mgw_select_option.
+    DATA ls_filter TYPE /iwbep/s_mgw_select_option.
+    DATA ls_select_option TYPE /iwbep/s_cod_select_option.
+
+    DATA: BEGIN OF ls_vendor,
+        vendor_id TYPE lifnr,
+        name TYPE name1_gp,
+        END OF ls_vendor,
+        lt_vendors LIKE STANDARD TABLE OF ls_vendor,
+        lt_source_vendors LIKE STANDARD TABLE OF ls_vendor.
+
+    "Check if searchstring is available
+    lv_search_string = io_tech_request_context->get_search_string( ).
+
+    "Searchstring will be used against Name of the GL account and also search string
+    IF lv_search_string IS NOT INITIAL.
+      CONCATENATE '*' lv_search_string '*' INTO lsr_gl_name-low.
+      CONCATENATE '*' lv_search_string '*' INTO lsr_search_string-low.
+      lsr_gl_name-option = 'CP'.
+      lsr_gl_name-sign = 'I'.
+      lsr_search_string-option = 'CP'.
+      lsr_search_string-sign = 'I'.
+      APPEND lsr_gl_name TO ltr_gl_name.
+      APPEND lsr_search_string TO ltr_search_string.
+    ENDIF.
+
+    lt_filter_select_options = io_tech_request_context->get_filter( )->get_filter_select_options( ).
+    READ TABLE lt_filter_select_options INTO ls_filter WITH KEY property = 'COSTCENTER'.
+    IF sy-subrc EQ 0.
+      READ TABLE ls_filter-select_options INTO ls_select_option INDEX 1.
+      lv_cost_center = ls_select_option-low.
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+        EXPORTING
+          input  = lv_cost_center
+        IMPORTING
+          output = lv_cost_center.
+      "Get Company code
+      SELECT SINGLE bukrs INTO lv_company_code FROM csks WHERE kostl = lv_cost_center.
+    ENDIF.
+
+    lt_filter_select_options = io_tech_request_context->get_filter( )->get_filter_select_options( ).
+    READ TABLE lt_filter_select_options INTO ls_filter WITH KEY property = 'ORDER'.
+    IF sy-subrc EQ 0.
+      READ TABLE ls_filter-select_options INTO ls_select_option INDEX 1.
+      lv_order = ls_select_option-low.
+      CALL FUNCTION 'CONVERSION_EXIT_ALPHA_INPUT'
+        EXPORTING
+          input  = lv_order
+        IMPORTING
+          output = lv_order.
+      "Get Company code
+      SELECT SINGLE bukrs INTO lv_company_code FROM aufk WHERE aufnr = lv_order.
+    ENDIF.
+
+    IF lv_company_code IS NOT INITIAL.
+      "Get chart of account
+      SELECT SINGLE ktopl INTO lv_chart_of_account FROM t001 WHERE bukrs = lv_company_code.
+    ENDIF.
+
+    IF lv_order IS INITIAL AND lv_cost_center IS INITIAL.
+      MESSAGE e001(/convrgnt/pr) INTO lv_message. "Filter for 'Order' or 'CostCenter' is required
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = lv_message.
+    ELSEIF lv_chart_of_account IS INITIAL.
+      MESSAGE e003(/convrgnt/pr) INTO lv_message. "Could not determine Chart of Account:=>Data error
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid            = /iwbep/cx_mgw_busi_exception=>business_error_unlimited
+          message_unlimited = lv_message.
+    ENDIF.
+
+*    "Get GL account and description
+    SELECT a~saknr AS accountno b~txt20 AS description INTO CORRESPONDING FIELDS OF TABLE et_entityset
+                                          FROM skb1 AS a INNER JOIN skat AS b ON a~saknr = b~saknr
+                                          WHERE
+                                                a~bukrs = lv_company_code AND
+                                                b~spras = sy-langu AND
+                                                b~ktopl = lv_chart_of_account AND
+                                              ( b~mcod1 IN ltr_search_string OR
+                                                b~txt20 IN ltr_gl_name ).
+
+    SORT et_entityset BY accountno.
+    DELETE ADJACENT DUPLICATES FROM et_entityset COMPARING accountno.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->MATERIALGROUPS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_MATERIALGROUP
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD materialgroups_get_entityset.
+
+    SELECT a~matkl AS materialgroupid b~wgbez AS materialgrouptext
+                              FROM t023 AS a INNER JOIN t023t AS b ON a~matkl = b~matkl
+                              INTO TABLE et_entityset
+                              WHERE b~spras = sy-langu.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->MATERIALS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_MATERIAL
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD materials_get_entityset.
+
+    DATA:
+        lt_return               TYPE STANDARD TABLE OF bapiret2,
+        lt_matnr_list           TYPE STANDARD TABLE OF bapimatlst,
+        ls_matnr                TYPE bapimatlst,
+        ls_entity_material      TYPE /convrgnt/cl_pr_mpc=>ts_material,
+        lt_matnr_sel            TYPE STANDARD TABLE OF bapimatram,
+        ls_matnr_sel            TYPE bapimatram,
+        ls_matnrdesc_sel        TYPE bapimatras,
+        lt_matnrdesc_sel        TYPE STANDARD TABLE OF bapimatras.
+
+    DATA: BEGIN OF ls_uom,
+            matnr TYPE matnr,
+            meins TYPE meins,
+            bstme TYPE bstme,
+          END OF ls_uom,
+          lt_uom LIKE TABLE OF ls_uom.
+
+    DATA: lt_parent_keys            TYPE /iwbep/t_mgw_tech_pairs,
+          ls_parent_key             TYPE /iwbep/s_mgw_tech_pair,
+          lv_plant                  TYPE werks_d.
+
+    DATA: lt_plants TYPE STANDARD TABLE OF bapimatraw,
+          ls_plant TYPE bapimatraw.
+
+    FIELD-SYMBOLS:
+       <ls_filter_select_option>  TYPE /iwbep/s_mgw_select_option,
+       <ls_sel_option>            TYPE /iwbep/s_cod_select_option.
+
+    "   Read the search string
+    READ TABLE it_filter_select_options ASSIGNING <ls_filter_select_option> WITH TABLE KEY property = 'SearchString'.
+    IF sy-subrc EQ 0.
+      READ TABLE <ls_filter_select_option>-select_options ASSIGNING <ls_sel_option> INDEX 1.
+    ENDIF.
+
+    "If this is through navigation, then fetch Plant details
+    "Get Parent entity name
+    IF io_tech_request_context->get_source_entity_type_name( ) = 'Plant'.
+      "get parent keys
+      lt_parent_keys = io_tech_request_context->get_source_keys( ).
+      READ TABLE lt_parent_keys INTO ls_parent_key WITH KEY name = 'PLANTKEY'.
+      IF sy-subrc EQ 0.
+        ls_plant-plant_low = ls_parent_key-value.
+        ls_plant-sign = 'I'.
+        ls_plant-option = 'EQ'.
+        APPEND ls_plant TO lt_plants.
+      ENDIF.
+    ENDIF.
+
+    " populate material selection
+    ls_matnr_sel-sign = 'I'.
+    ls_matnr_sel-option = 'CP'.
+    IF <ls_sel_option> IS ASSIGNED.
+      ls_matnr_sel-matnr_low = <ls_sel_option>-low.
+      IF <ls_sel_option>-low NS '*'.
+        CONCATENATE '*' ls_matnr_sel-matnr_low '*' INTO ls_matnr_sel-matnr_low. "enable wild character search
+      ENDIF.
+    ELSE.
+      ls_matnr_sel-matnr_low = '*'.   "Include all
+    ENDIF.
+    APPEND ls_matnr_sel TO lt_matnr_sel.
+
+    " populate material description selection
+    ls_matnrdesc_sel-sign = 'I'.
+    ls_matnrdesc_sel-option = 'CP'.
+    IF <ls_sel_option> IS ASSIGNED.
+      ls_matnrdesc_sel-descr_low = <ls_sel_option>-low.
+      IF <ls_sel_option>-low NS '*'.
+        CONCATENATE '*' ls_matnrdesc_sel-descr_low '*' INTO ls_matnrdesc_sel-descr_low. "enable wild character search
+      ENDIF.
+    ELSE.
+      ls_matnr_sel-matnr_low = '*'.   "Include all
+    ENDIF.
+    APPEND ls_matnrdesc_sel TO lt_matnrdesc_sel.
+
+*----get list of products ----------------------------------------
+    CALL FUNCTION 'BAPI_MATERIAL_GETLIST'
+      EXPORTING
+        maxrows              = 100          "Maximum of 100 products to be shown
+      TABLES
+        matnrselection       = lt_matnr_sel
+        materialshortdescsel = lt_matnrdesc_sel
+        plantselection       = lt_plants
+*       salesorganisationselection   = lt_sales_org_sel
+*       distributionchannelselection = lt_distr_sel
+        matnrlist            = lt_matnr_list
+        return               = lt_return.
+
+    IF lt_matnr_list IS INITIAL.
+      RETURN.
+    ENDIF.
+
+* Get Purchasing UoM and Base UoM
+    IF lt_matnr_list[] IS NOT INITIAL.
+      SELECT matnr meins bstme FROM mara INTO TABLE lt_uom
+        FOR ALL ENTRIES IN lt_matnr_list
+          WHERE matnr = lt_matnr_list-material.
+    ENDIF.
+
+    LOOP AT lt_matnr_list INTO ls_matnr.
+      ls_entity_material-materialnumber = ls_matnr-material.
+      ls_entity_material-materialtext = ls_matnr-matl_desc.
+      READ TABLE lt_uom INTO ls_uom WITH KEY matnr = ls_matnr-material.
+      IF sy-subrc EQ 0.
+        IF ls_uom-bstme IS NOT INITIAL.  "Use Purchasing UoM
+          ls_entity_material-uom = ls_uom-bstme.
+        ELSE.  "if Not present use Base UoM
+          ls_entity_material-uom = ls_uom-meins.
+        ENDIF.
+      ENDIF.
+      APPEND ls_entity_material TO et_entityset.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->NOTES_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_NOTE
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD notes_get_entityset.
+
+    DATA: lt_notes      TYPE /convrgnt/tt_notes.
+    DATA: ls_note       TYPE /convrgnt/notes.
+    DATA: ls_entity_note  TYPE LINE OF /convrgnt/cl_pr_mpc=>tt_note.
+    DATA: ls_keytab     TYPE /iwbep/s_mgw_name_value_pair,
+          lv_pr_number  TYPE char10.
+
+    " Get PR Number
+    READ TABLE it_key_tab INTO ls_keytab INDEX 1.
+    IF sy-subrc EQ 0 AND ls_keytab-name EQ 'PRNumber'.
+      lv_pr_number = ls_keytab-value.
+
+      CALL METHOD me->get_notes
+        EXPORTING
+          iv_object_id = lv_pr_number
+*         iv_object_line =
+*         iv_app_type  = 'PR'
+*         iv_langu     = SY-LANGU
+        RECEIVING
+          et_notes     = lt_notes.
+    ENDIF.
+
+    " Put it back to entity
+
+    LOOP AT lt_notes INTO ls_note.
+      ls_entity_note-id  = ls_note-note_id.
+      ls_entity_note-notetype = ls_note-type.
+      ls_entity_note-notetypetext = ls_note-type_descr.
+      ls_entity_note-createdat  = ls_note-created_at.
+      ls_entity_note-createdby = ls_note-created_by_id.
+      ls_entity_note-createdbyname = ls_note-created_by_name.
+      ls_entity_note-notetext = ls_note-text.
+      APPEND ls_entity_note TO et_entityset.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->ORDERS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_ORDER
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD orders_get_entityset.
+
+*-------------------------------------------------------------
+*  Data declaration
+*-------------------------------------------------------------
+    DATA lo_filter TYPE  REF TO /iwbep/if_mgw_req_filter.
+    DATA lt_filter_select_options TYPE /iwbep/t_mgw_select_option.
+    DATA lv_filter_str TYPE string.
+*    DATA lv_max_hits TYPE i VALUE 9999.
+    DATA ls_paging TYPE /iwbep/s_mgw_paging.
+    DATA ls_converted_keys LIKE LINE OF et_entityset.
+*    DATA ls_message TYPE bapiret2.
+    DATA lt_selopt TYPE ddshselops.
+*    DATA ls_selopt LIKE LINE OF lt_selopt.
+    DATA ls_filter TYPE /iwbep/s_mgw_select_option.
+    DATA ls_filter_range TYPE /iwbep/s_cod_select_option.
+    DATA lr_ordertxt LIKE RANGE OF ls_converted_keys-ordertext.
+    DATA lr_orderid LIKE RANGE OF ls_converted_keys-orderid.
+*    DATA ls_ordertxt LIKE LINE OF lr_ordertxt.
+*    DATA lr_kostl LIKE RANGE OF ls_converted_keys-kostl.
+*    DATA ls_kostl LIKE LINE OF lr_kostl.
+*    DATA lt_result_list TYPE /iwbep/if_sb_gendpc_shlp_data=>tt_result_list.
+*    DATA lv_next TYPE i VALUE 1.
+*    DATA ls_entityset LIKE LINE OF et_entityset.
+
+    FIELD-SYMBOLS: <fs_entity> LIKE LINE OF et_entityset.
+*-------------------------------------------------------------
+*  Map the runtime request to the Search Help select option - Only mapped attributes
+*-------------------------------------------------------------
+* Get all input information from the technical request context object
+* Since DPC works with internal property names and runtime API interface holds external property names
+* the process needs to get the all needed input information from the technical request context object
+* Get filter or select option information
+    lo_filter = io_tech_request_context->get_filter( ).
+    lt_filter_select_options = lo_filter->get_filter_select_options( ).
+    lv_filter_str = lo_filter->get_filter_string( ).
+
+* Check if the supplied filter is supported by standard gateway runtime process
+    IF  lv_filter_str            IS NOT INITIAL
+    AND lt_filter_select_options IS INITIAL.
+      " If the string of the Filter System Query Option is not automatically converted into
+      " filter option table (lt_filter_select_options), then the filtering combination is not supported
+      " Log message in the application log
+      me->/iwbep/if_sb_dpc_comm_services~log_message(
+        EXPORTING
+          iv_msg_type   = 'E'
+          iv_msg_id     = '/IWBEP/MC_SB_DPC_ADM'
+          iv_msg_number = 025 ).
+      " Raise Exception
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+        EXPORTING
+          textid = /iwbep/cx_mgw_tech_exception=>internal_error.
+    ENDIF.
+
+    ls_paging-top = io_tech_request_context->get_top( ).
+    ls_paging-skip = io_tech_request_context->get_skip( ).
+
+    " Calculate the number of max hits to be fetched from the function module
+    " The lv_max_hits value is a summary of the Top and Skip values
+    IF ls_paging-top > 0.
+*      lv_max_hits = is_paging-top + is_paging-skip.
+    ENDIF.
+
+* Maps filter table lines to the Search Help select option table
+    LOOP AT lt_filter_select_options INTO ls_filter.
+
+      LOOP AT ls_filter-select_options INTO ls_filter_range.
+        CASE ls_filter-property.
+          WHEN 'ORDERTEXT'.              " Equivalent to 'CostCenterText' property in the service
+            lo_filter->convert_select_option(
+              EXPORTING
+                is_select_option = ls_filter
+              IMPORTING
+                et_select_option = lr_ordertxt ).
+
+            "Search within order ID as well
+            lo_filter->convert_select_option(
+              EXPORTING
+                is_select_option = ls_filter
+              IMPORTING
+                et_select_option = lr_orderid ).
+
+          WHEN OTHERS.
+            " Log message in the application log
+            me->/iwbep/if_sb_dpc_comm_services~log_message(
+              EXPORTING
+                iv_msg_type   = 'E'
+                iv_msg_id     = '/IWBEP/MC_SB_DPC_ADM'
+                iv_msg_number = 020
+                iv_msg_v1     = ls_filter-property ).
+            " Raise Exception
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                textid = /iwbep/cx_mgw_tech_exception=>internal_error.
+        ENDCASE.
+      ENDLOOP.
+    ENDLOOP.
+
+    "Get Orders
+    SELECT aufnr AS orderid ktext AS ordertext INTO TABLE et_entityset
+      FROM aufk UP TO 100 ROWS
+      WHERE ktext IN lr_ordertxt or
+            aufnr in lr_orderid.
+
+* yet to handle
+    "paging,
+    "empty search,
+    "exception handling
+    "Filter SELECT by companycode/controlling area
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->PLANTS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_PLANT
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD plants_get_entityset.
+
+    " Get all plants
+    SELECT
+      werks AS plantkey
+      a~name1 AS planttext
+      b~name1 as plantaddress-name
+      b~street AS plantaddress-addressline1
+      b~house_num1 AS plantaddress-house_num1
+      b~post_code1 AS plantaddress-postalcode
+      b~city1 AS plantaddress-city
+      b~country AS plantaddress-country
+            INTO CORRESPONDING FIELDS OF TABLE et_entityset FROM
+                                          t001w AS a LEFT OUTER JOIN adrc AS b ON a~adrnr = b~addrnumber.
+    "WHERE date_from ge sy-datum.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->PRHEADERS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_PRHEADER
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD prheaders_get_entityset.
+
+    DATA: lv_search_string          TYPE string,
+          ltr_pr_number             TYPE RANGE OF banfn,
+          lsr_pr_number             LIKE LINE OF ltr_pr_number,
+          ls_pr_header TYPE LINE OF /convrgnt/cl_pr_mpc=>tt_prheader,
+          lv_amount    TYPE bapre,
+          lv_current_amount    TYPE bapre,
+          lv_count     TYPE i,
+          lv_bsart     TYPE esart,
+          lv_status    TYPE banst,
+          lv_req_pro_status TYPE banpr,
+          lv_header_currency TYPE waers.
+
+    DATA: lt_taba TYPE STANDARD TABLE OF dd07v,
+          ls_taba TYPE dd07v,
+          lt_tabb TYPE STANDARD TABLE OF dd07v.
+
+    DATA: lt_req_taba TYPE STANDARD TABLE OF dd07v,
+          ls_req_taba TYPE dd07v.
+
+    DATA: lt_order    TYPE  /iwbep/t_mgw_tech_order.
+    DATA: ls_order LIKE LINE OF lt_order.
+    CONSTANTS:BEGIN OF lcs_sorting_order,
+                              descending TYPE string VALUE 'desc',
+                             ascending  TYPE string VALUE 'asc',
+              END OF   lcs_sorting_order.
+    DATA: lt_otab   TYPE abap_sortorder_tab,
+          ls_otab   TYPE abap_sortorder.
+
+    DATA: BEGIN OF ls_pr_item,
+      banfn TYPE banfn,
+      bnfpo TYPE bnfpo,
+      bsart TYPE esart,
+      werks TYPE ewerk,
+      statu TYPE banst,
+      preis TYPE bapre,
+      peinh TYPE peinh,
+      menge TYPE bamng,
+      waers TYPE waers,
+      frgzu TYPE frgzu,
+      banpr TYPE banpr,
+         END OF ls_pr_item,
+         lt_pr_items LIKE TABLE OF ls_pr_item.
+
+    DATA: BEGIN OF ls_pur_doc_type,
+      bsart TYPE esart,
+      batxt TYPE batxt,
+      END OF ls_pur_doc_type,
+      lt_pur_doc_types LIKE TABLE OF ls_pur_doc_type.
+
+    "Check if searchstring is available
+    lv_search_string = io_tech_request_context->get_search_string( ).
+
+    "Searchstring will be used against PRNumber only (to be enahnced later)
+    IF strlen( lv_search_string ) EQ 10. "Complete PR number provided
+      lsr_pr_number-low = lv_search_string.
+      lsr_pr_number-option = 'EQ'.
+      lsr_pr_number-sign = 'I'.
+      APPEND lsr_pr_number TO ltr_pr_number.
+    ELSEIF strlen( lv_search_string ) GT 0.
+      CONCATENATE '*' lv_search_string '*' INTO lsr_pr_number-low.
+      lsr_pr_number-option = 'CP'.
+      lsr_pr_number-sign = 'I'.
+      APPEND lsr_pr_number TO ltr_pr_number.
+    ENDIF.
+
+    " GET PRs created by user. <<<<<<<<<<<<<<More filters to be put in future>>>>>>>>>>
+    SELECT banfn bnfpo bsart werks statu preis peinh menge waers frgzu banpr INTO TABLE lt_pr_items FROM eban
+      WHERE
+          ernam = sy-uname AND
+          banfn IN ltr_pr_number.
+
+
+    " Get all Document Type texts
+    SELECT bsart batxt INTO TABLE lt_pur_doc_types FROM t161t
+      WHERE
+          spras = sy-langu AND
+          bstyp = 'B'.
+
+    "Get all Processing status texts
+    CALL FUNCTION 'DD_DOMA_GET'
+      EXPORTING
+        domain_name   = 'BANST'
+        langu         = sy-langu
+        withtext      = 'X'
+      TABLES
+        dd07v_tab_a   = lt_taba
+        dd07v_tab_n   = lt_tabb
+      EXCEPTIONS
+        illegal_value = 1
+        op_failure    = 2
+        OTHERS        = 3.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    "Get all Requisiton Processing status texts
+    CALL FUNCTION 'DD_DOMA_GET'
+      EXPORTING
+        domain_name   = 'BANPR'
+        langu         = sy-langu
+        withtext      = 'X'
+      TABLES
+        dd07v_tab_a   = lt_req_taba
+        dd07v_tab_n   = lt_tabb
+      EXCEPTIONS
+        illegal_value = 1
+        op_failure    = 2
+        OTHERS        = 3.
+    IF sy-subrc <> 0.
+      MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+              WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+    ENDIF.
+
+    SORT lt_pr_items BY banfn.
+
+    READ TABLE lt_pr_items INTO ls_pr_item INDEX 1.
+    lv_header_currency = get_plant_currency( ls_pr_item-werks ).
+
+    LOOP AT lt_pr_items INTO ls_pr_item.
+
+      lv_count = lv_count + 1.
+      lv_current_amount = ls_pr_item-preis * ls_pr_item-menge / ls_pr_item-peinh.
+
+      IF lv_header_currency NE ls_pr_item-waers.
+        "Item has a different currency. Do currency conversion
+        CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'
+          EXPORTING
+            date             = sy-datum
+            foreign_amount   = lv_current_amount
+            foreign_currency = ls_pr_item-waers
+            local_currency   = lv_header_currency
+          IMPORTING
+            local_amount     = lv_current_amount
+          EXCEPTIONS
+            no_rate_found    = 1
+            overflow         = 2
+            no_factors_found = 3
+            no_spread_found  = 4
+            derived_2_times  = 5
+            OTHERS           = 6.
+      ENDIF.
+
+      lv_amount = lv_amount + lv_current_amount.
+      lv_bsart = ls_pr_item-bsart.
+      lv_status = ls_pr_item-statu.
+      ls_pr_header-approvalstatus = ls_pr_item-frgzu.
+      lv_req_pro_status = ls_pr_item-banpr.
+      AT END OF banfn.
+        ls_pr_header-prnumber = ls_pr_item-banfn.
+
+        ls_pr_header-materialcount = lv_count.
+        ls_pr_header-value = lv_amount.
+
+        " Get Status
+        READ TABLE lt_taba INTO ls_taba WITH KEY domvalue_l = lv_status.
+        IF sy-subrc EQ 0.
+          ls_pr_header-processingstatus = lv_status.
+          ls_pr_header-processingstatustext = ls_taba-ddtext.
+        ENDIF.
+
+        "Get requistion processing status
+        READ TABLE lt_req_taba INTO ls_req_taba WITH KEY domvalue_l = lv_req_pro_status.
+        IF sy-subrc EQ 0.
+          ls_pr_header-reqprocessingstate = lv_req_pro_status.
+          ls_pr_header-reqprocessingstatetext = ls_req_taba-ddtext.
+        ENDIF.
+
+        READ TABLE lt_pur_doc_types INTO ls_pur_doc_type WITH KEY bsart = lv_bsart.
+        IF sy-subrc EQ 0.
+          ls_pr_header-documenttypetext = ls_pur_doc_type-batxt.
+        ENDIF.
+        ls_pr_header-currency = lv_header_currency.
+        CLEAR: lv_count, lv_amount.
+        APPEND ls_pr_header TO et_entityset.
+      ENDAT.
+
+    ENDLOOP.
+
+    " Handle Orderby
+    lt_order = io_tech_request_context->get_orderby( ).
+    IF lt_order IS NOT INITIAL.
+      LOOP AT lt_order INTO ls_order.
+        ls_otab-name = ls_order-property.
+        IF ls_order-order = lcs_sorting_order-descending.
+          ls_otab-descending = abap_true.
+        ELSE.
+          ls_otab-descending = abap_false.
+        ENDIF.
+        APPEND ls_otab TO lt_otab.
+      ENDLOOP.
+      SORT et_entityset BY (lt_otab).
+
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->PRITEMS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_PRITEM
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD pritems_get_entityset.
+
+    DATA: ls_keytab     TYPE /iwbep/s_mgw_name_value_pair,
+          lv_pr_number  TYPE char10,
+          ls_item       TYPE /convrgnt/cl_pr_mpc=>ts_pritem,
+          lt_eban       TYPE TABLE OF eban,
+          ls_eban       TYPE eban,
+          ls_delivery_address TYPE /convrgnt/delivery_address.
+
+    DATA: BEGIN OF ls_plant_text,
+            werks TYPE werks_d,
+            name1 TYPE name1,
+          END OF ls_plant_text,
+          lt_plant_text LIKE TABLE OF ls_plant_text.
+
+    DATA: BEGIN OF ls_material_text,
+            matnr TYPE matnr,
+            maktx TYPE maktx,
+          END OF ls_material_text,
+          lt_material_text LIKE TABLE OF ls_material_text.
+
+    DATA: BEGIN OF ls_material_group,
+            matkl TYPE matkl,
+            wgbez TYPE wgbez,
+          END OF ls_material_group,
+          lt_material_groups LIKE TABLE OF ls_material_group.
+
+    DATA: BEGIN OF ls_account_assignment,
+            bnfpo TYPE bnfpo,
+            kostl TYPE kostl,
+            aufnr TYPE aufnr,
+          END OF ls_account_assignment,
+          lt_account_assignments LIKE TABLE OF ls_account_assignment.
+
+    DATA: BEGIN OF ls_deliveryitm_address,
+        bnfpo TYPE bnfpo,
+        adrn2 TYPE adrn2,
+      END OF ls_deliveryitm_address,
+      lt_addresses LIKE TABLE OF ls_deliveryitm_address.
+
+    FIELD-SYMBOLS: <fs_item> TYPE /convrgnt/cl_pr_mpc=>ts_pritem.
+
+    " Get PR Number
+    READ TABLE it_key_tab INTO ls_keytab INDEX 1.
+    IF sy-subrc EQ 0 AND ls_keytab-name EQ 'PRNumber'.
+      lv_pr_number = ls_keytab-value.
+
+      "Get Items
+      SELECT * FROM eban INTO TABLE lt_eban
+        WHERE banfn = lv_pr_number.
+      IF sy-subrc EQ 0.
+        LOOP AT lt_eban INTO ls_eban.
+          ls_item-itemnumber = ls_eban-bnfpo.
+          ls_item-description = ls_eban-txz01.
+          ls_item-materialnumber = ls_eban-matnr.
+          ls_item-materialgroup = ls_eban-matkl.
+          ls_item-quantity = ls_eban-menge.
+          ls_item-quantityunittext = ls_eban-meins.
+          ls_item-unitprice = ls_eban-preis.  "Valuation Price
+          ls_item-unitpricecurrency = ls_eban-waers.
+          ls_item-total = ls_eban-preis * ls_eban-menge.
+          ls_item-totalcurrency = ls_eban-waers.
+          ls_item-plant = ls_eban-werks.
+          ls_item-deliverydate = ls_eban-lfdat.
+          ls_item-requirementtrackingnumber = ls_eban-bednr.
+          APPEND ls_item TO et_entityset.
+
+          IF ls_eban-adrnr IS INITIAL.
+            ls_deliveryitm_address-adrn2 = ls_eban-adrn2.
+          ELSE.
+            ls_deliveryitm_address-adrn2 = ls_eban-adrnr.
+          ENDIF.
+          ls_deliveryitm_address-bnfpo = ls_eban-bnfpo.
+          APPEND ls_deliveryitm_address TO lt_addresses.
+
+        ENDLOOP.
+      ENDIF.
+
+* Get Plant text
+      IF et_entityset IS NOT INITIAL.
+        SELECT werks name1 FROM t001w INTO TABLE lt_plant_text
+          FOR ALL ENTRIES IN et_entityset
+          WHERE
+            werks = et_entityset-plant.
+
+* Material text
+        SELECT matnr maktx FROM makt INTO TABLE lt_material_text
+          FOR ALL ENTRIES IN et_entityset
+          WHERE
+            matnr = et_entityset-materialnumber.
+
+* Material Group Text
+        SELECT matkl wgbez FROM t023t INTO TABLE lt_material_groups
+          FOR ALL ENTRIES IN et_entityset
+          WHERE
+            spras = sy-langu AND
+            matkl = et_entityset-materialgroup.
+
+* Get Account Assignment for items
+        SELECT bnfpo kostl aufnr FROM ebkn INTO TABLE lt_account_assignments
+          WHERE
+            banfn = lv_pr_number.
+
+      ENDIF.
+
+      LOOP AT et_entityset ASSIGNING <fs_item>.
+        READ TABLE lt_plant_text INTO ls_plant_text WITH KEY werks = <fs_item>-plant.
+        <fs_item>-planttext = ls_plant_text-name1.
+
+        READ TABLE lt_material_text INTO ls_material_text WITH KEY matnr = <fs_item>-materialnumber.
+        <fs_item>-materialtext = ls_material_text-maktx.
+
+        READ TABLE lt_material_groups INTO ls_material_group WITH KEY matkl = <fs_item>-materialgroup.
+        <fs_item>-materialgrouptext = ls_material_group-wgbez.
+
+        READ TABLE lt_account_assignments INTO ls_account_assignment WITH KEY bnfpo = <fs_item>-itemnumber.
+        IF ls_account_assignment-kostl IS NOT INITIAL.
+          <fs_item>-accountassobjecttext = 'Cost Center'.
+          <fs_item>-accountassvaluetext = ls_account_assignment-kostl.
+        ELSE.
+          <fs_item>-accountassobjecttext = 'Order'.
+          <fs_item>-accountassvaluetext = ls_account_assignment-aufnr.
+        ENDIF.
+
+        "Read Delivery address
+        READ TABLE lt_addresses INTO ls_deliveryitm_address WITH KEY bnfpo = <fs_item>-itemnumber.
+        CALL METHOD get_delivery_address
+          EXPORTING
+            iv_addrnum          = ls_deliveryitm_address-adrn2
+            iv_plant            = <fs_item>-plant
+          IMPORTING
+            es_delivery_address = ls_delivery_address.
+
+        MOVE-CORRESPONDING ls_delivery_address TO <fs_item>-deliveryaddress.
+      ENDLOOP.
+
+    ENDIF.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->PURCHASINGGROUPS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_PURCHASINGGROUP
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD purchasinggroups_get_entityset.
+
+    SELECT ekgrp AS purchasinggroupkey eknam AS purchasinggrouptext INTO TABLE et_entityset FROM t024.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->UNITOFMEASURMENT_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_UNITOFMEASUREMENT
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD unitofmeasurment_get_entityset.
+
+    SELECT a~msehi AS uom b~msehl AS uomtext
+                                         FROM t006 as a INNER JOIN t006a as b ON a~msehi = b~msehi
+                                         INTO TABLE et_entityset
+                                         WHERE a~kzkeh = 'X' AND
+                                               b~spras = sy-langu.
+
+    ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Protected Method /CONVRGNT/CL_PR_DPC_EXT->VENDORS_GET_ENTITYSET
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_ENTITY_NAME                 TYPE        STRING
+* | [--->] IV_ENTITY_SET_NAME             TYPE        STRING
+* | [--->] IV_SOURCE_NAME                 TYPE        STRING
+* | [--->] IT_FILTER_SELECT_OPTIONS       TYPE        /IWBEP/T_MGW_SELECT_OPTION
+* | [--->] IS_PAGING                      TYPE        /IWBEP/S_MGW_PAGING
+* | [--->] IT_KEY_TAB                     TYPE        /IWBEP/T_MGW_NAME_VALUE_PAIR
+* | [--->] IT_NAVIGATION_PATH             TYPE        /IWBEP/T_MGW_NAVIGATION_PATH
+* | [--->] IT_ORDER                       TYPE        /IWBEP/T_MGW_SORTING_ORDER
+* | [--->] IV_FILTER_STRING               TYPE        STRING
+* | [--->] IV_SEARCH_STRING               TYPE        STRING
+* | [--->] IO_TECH_REQUEST_CONTEXT        TYPE REF TO /IWBEP/IF_MGW_REQ_ENTITYSET(optional)
+* | [<---] ET_ENTITYSET                   TYPE        /CONVRGNT/CL_PR_MPC=>TT_VENDOR
+* | [<---] ES_RESPONSE_CONTEXT            TYPE        /IWBEP/IF_MGW_APPL_SRV_RUNTIME=>TY_S_MGW_RESPONSE_CONTEXT
+* | [!CX!] /IWBEP/CX_MGW_BUSI_EXCEPTION
+* | [!CX!] /IWBEP/CX_MGW_TECH_EXCEPTION
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD vendors_get_entityset.
+
+    DATA: lv_search_string          TYPE string,
+          lv_material_number        TYPE matnr.
+    DATA: ltr_vendor_name           TYPE RANGE OF name1_gp,
+          lsr_vendor_name           LIKE LINE OF ltr_vendor_name.
+    DATA: ltr_search_string         TYPE RANGE OF ad_sort1,
+          lsr_search_string         LIKE LINE OF ltr_search_string.
+    DATA: ltr_vendors               TYPE RANGE OF lifnr,
+          lsr_vendor                LIKE LINE OF ltr_vendors.
+    DATA: lt_parent_keys            TYPE /iwbep/t_mgw_tech_pairs,
+          ls_parent_key             TYPE /iwbep/s_mgw_tech_pair.
+
+    DATA: BEGIN OF ls_vendor,
+        vendor_id TYPE lifnr,
+        name TYPE name1_gp,
+        END OF ls_vendor,
+        lt_vendors LIKE STANDARD TABLE OF ls_vendor,
+        lt_source_vendors LIKE STANDARD TABLE OF ls_vendor.
+
+    "Get Parent entity name
+    IF io_tech_request_context->get_source_entity_type_name( ) = 'Material'.
+      "get parent keys
+      lt_parent_keys = io_tech_request_context->get_source_keys( ).
+      READ TABLE lt_parent_keys INTO ls_parent_key WITH KEY name = 'MATERIALNUMBER'.
+      IF sy-subrc EQ 0.
+        lv_material_number = ls_parent_key-value.
+      ENDIF.
+
+      "Get Vendors from PIR purchase infor records (EINA)
+      SELECT lifnr AS vendor_id INTO TABLE lt_source_vendors FROM eina WHERE matnr = lv_material_number.
+      IF sy-subrc EQ 0.
+        "Fill vendor keys
+        LOOP AT lt_source_vendors INTO ls_vendor.
+          lsr_vendor-option = 'EQ'.
+          lsr_vendor-sign = 'I'.
+          lsr_vendor-low = ls_vendor-vendor_id.
+          APPEND lsr_vendor TO ltr_vendors.
+        ENDLOOP.
+      ENDIF.
+    ENDIF.
+
+    "Check if searchstring is available
+    lv_search_string = io_tech_request_context->get_search_string( ).
+
+    "Searchstring will be used against Name of the vendor
+    IF lv_search_string IS NOT INITIAL.
+      CONCATENATE '*' lv_search_string '*' INTO lsr_vendor_name-low.
+      CONCATENATE '*' lv_search_string '*' INTO lsr_search_string-low.
+      lsr_vendor_name-option = 'CP'.
+      lsr_vendor_name-sign = 'I'.
+      lsr_search_string-option = 'CP'.
+      lsr_search_string-sign = 'I'.
+      APPEND lsr_vendor_name TO ltr_vendor_name.
+      APPEND lsr_search_string TO ltr_search_string.
+    ENDIF.
+
+    "Get Vendor, Address, and Address text
+    SELECT a~lifnr AS vendor_id
+           a~name1 AS name
+           d~bezei AS city
+           c~landx AS country
+           a~telf1 AS telephone
+           f~smtp_addr AS email
+                                            FROM lfa1 AS a INNER JOIN adrc AS b ON a~adrnr = b~addrnumber
+                                                      LEFT JOIN t005u AS d ON b~region = d~bland AND b~country = d~land1 AND d~spras = sy-langu
+                                                      INNER JOIN t005t AS c ON b~country = c~land1
+                                                      LEFT JOIN adr6 AS f ON a~adrnr = f~addrnumber
+                                            INTO TABLE et_entityset
+                                            WHERE a~lifnr IN ltr_vendors AND
+                                                ( a~name1 IN ltr_vendor_name OR
+                                                  a~sortl IN ltr_search_string ) AND
+                                                  c~spras = sy-langu.
+
+  ENDMETHOD.
+ENDCLASS.
