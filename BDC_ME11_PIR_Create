@@ -1,0 +1,294 @@
+FUNCTION zmrfq_create_info_record.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     VALUE(CTU) LIKE  APQI-PUTACTIVE DEFAULT 'X'
+*"     VALUE(MODE) LIKE  APQI-PUTACTIVE DEFAULT 'N'
+*"     VALUE(UPDATE) LIKE  APQI-PUTACTIVE DEFAULT 'L'
+*"     VALUE(GROUP) LIKE  APQI-GROUPID OPTIONAL
+*"     VALUE(USER) LIKE  APQI-USERID OPTIONAL
+*"     VALUE(KEEP) LIKE  APQI-QERASE OPTIONAL
+*"     VALUE(HOLDDATE) LIKE  APQI-STARTDATE OPTIONAL
+*"     VALUE(NODATA) LIKE  APQI-PUTACTIVE DEFAULT '/'
+*"     VALUE(LIFNR_001) TYPE  ZMRFQ_SUPP
+*"     VALUE(MATNR_002) TYPE  ZMRFQ_PART_NO
+*"     VALUE(EKORG_003) LIKE  BDCDATA-FVAL
+*"     VALUE(TXZ01_005) LIKE  BDCDATA-FVAL
+*"     VALUE(APLFZ_006) TYPE  ZMRFQ_LEAD_TIME
+*"     VALUE(NOTES) TYPE  ZMRFQ_NOTES
+*"     VALUE(PLANT) TYPE  WERKS
+*"     VALUE(COO) TYPE  ZMRFQ_COO
+*"     VALUE(STATUS) TYPE  ZMRFQ_STATUS
+*"  EXPORTING
+*"     VALUE(SUBRC) LIKE  SYST-SUBRC
+*"  TABLES
+*"      MESSTAB STRUCTURE  BDCMSGCOLL OPTIONAL
+*"      SCALES STRUCTURE  ZMRFQ_SCALE OPTIONAL
+*"----------------------------------------------------------------------
+* This function module is used to create purchase info record in ME11
+* using BDC method.
+*"----------------------------------------------------------------------
+  DATA: lv_lead_time    TYPE char3,
+         ls_scale TYPE zmrfq_scale,
+        lv_cost_value TYPE char14,
+        lv_qty_value TYPE char5,
+        lv_count_type TYPE char14,
+        lv_index TYPE char2,
+        lv_cost  TYPE char14,
+        lv_qty  TYPE char14,
+        lv_date(10) TYPE c ,
+        lv_str_len TYPE i,
+        lv_line LIKE abaptext-line,
+        lv_text_field TYPE char16,
+        lt_split_tab LIKE abaptext-line OCCURS 0 WITH HEADER LINE,
+        lv_cnt  TYPE i,
+        lt_scales_temp TYPE TABLE OF zmrfq_scale.
+
+  subrc = 0.
+
+  PERFORM bdc_nodata      USING nodata.
+
+  PERFORM open_group      USING group user keep holddate ctu.
+
+  " set values ME11 initial screen
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0100'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EINA-LIFNR'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '/00'.
+  PERFORM bdc_field       USING 'EINA-LIFNR'
+                                lifnr_001.
+  PERFORM bdc_field       USING 'EINA-MATNR'
+                                matnr_002.
+  PERFORM bdc_field       USING 'EINE-EKORG'
+                                ekorg_003.
+  PERFORM bdc_field       USING 'EINE-WERKS'
+                                 plant.
+  PERFORM bdc_field       USING 'RM06I-NORMB'
+                                'X'.
+
+  " set values to general data fields
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0101'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EINA-TXZ01'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '/00'.
+  if status NE 4.
+    PERFORM bdc_field       USING 'EINA-URZLA'
+                                  coo.
+  endif.
+  PERFORM bdc_field       USING 'EINA-TXZ01'
+                                txz01_005.
+
+  " set values to purchase org data fields
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0102'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EINE-NETPR'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=KO'.
+  lv_lead_time = aplfz_006.
+  PERFORM bdc_field       USING 'EINE-APLFZ'
+                                lv_lead_time.
+  PERFORM bdc_field       USING 'EINE-EKGRP'
+                                '999'.
+  PERFORM bdc_field       USING 'EINE-MWSKZ'
+                                'I0'.
+  " set net price and quantity
+  IF scales[] IS NOT INITIAL.
+    READ TABLE scales INTO ls_scale INDEX 1.
+    lv_cost_value = ls_scale-scale_price.
+    lv_qty_value = ls_scale-scale_qty.
+
+    PERFORM bdc_field       USING 'EINE-NORBM'
+                              lv_qty_value.
+    PERFORM bdc_field       USING 'EINE-MINBM'
+                              lv_qty_value.
+
+    PERFORM bdc_field       USING 'EINE-NETPR'
+                                  lv_cost_value.
+    lv_qty_value = 1.
+    PERFORM bdc_field       USING 'EINE-PEINH'
+                                  lv_qty_value.
+    CLEAR ls_scale.
+    CLEAR lv_qty_value.
+  ENDIF.
+
+  " Conditions screen
+  PERFORM bdc_dynpro      USING 'SAPMV13A' '0201'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'T685T-VTEXT(01)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=PSTF'.
+
+  " set current date into mm/dd/yyyy format
+  CONCATENATE sy-datum+4(2) '/' sy-datum+6(2) '/' sy-datum(4) INTO lv_date.
+
+  PERFORM bdc_field       USING 'RV13A-DATAB'
+                                lv_date.
+  PERFORM bdc_field       USING 'RV13A-DATBI'
+                                '12/31/9999'.
+
+*  DESCRIBE TABLE scales LINES lv_cnt.
+*  DO lv_cnt TIMES.
+*    PERFORM:  bdc_field         USING 'BDC_OKCODE' '=P+'.
+*    PERFORM:  bdc_dynpro        USING 'SAPMV13A' '0201'.
+*  ENDDO.
+
+
+  PERFORM bdc_dynpro      USING 'SAPMV13A' '0303'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'KONM-KBETR(08)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '/00'.
+  PERFORM bdc_field       USING 'RV13A-DATAB'
+                                lv_date.
+  PERFORM bdc_field       USING 'RV13A-DATBI'
+                                '12/31/9999'.
+
+
+  lv_index = 1.
+  " add scales from 2 to max number of scales provided
+  LOOP AT scales INTO ls_scale.
+    lv_cost_value = ls_scale-scale_price.
+    lv_qty_value = ls_scale-scale_qty.
+
+*      lv_index = sy-tabix.
+    IF sy-tabix = 9.
+      lv_index = 2.
+      " go to next page in the condition scale table
+      PERFORM:  bdc_dynpro        USING 'SAPMV13A' '0303'.
+      PERFORM bdc_field       USING 'BDC_CURSOR'
+                                    'KONM-KSTBM(01)'.
+      PERFORM:  bdc_field         USING 'BDC_OKCODE' '=P+'.
+      PERFORM bdc_field       USING 'RV13A-DATAB'
+                              lv_date.
+      PERFORM bdc_field       USING 'RV13A-DATBI'
+                                    '12/31/9999'.
+
+      "enter on KONP-KPEIN(04) to get 3 more rows
+      PERFORM bdc_dynpro      USING 'SAPMV13A' '0303'.
+      PERFORM bdc_field       USING 'BDC_CURSOR'
+                                    'KONM-KBETR(03)'.
+      PERFORM bdc_field       USING 'BDC_OKCODE'
+                                    '/00'.
+      PERFORM bdc_field       USING 'RV13A-DATAB'
+                              lv_date.
+      PERFORM bdc_field       USING 'RV13A-DATBI'
+                                    '12/31/9999'.
+
+    ENDIF.
+    " only set second record onwards as first record has already set above
+
+    CONCATENATE 'KONM-KSTBM(0' lv_index ')' INTO lv_qty.
+    CONCATENATE 'KONM-KBETR(0' lv_index ')' INTO lv_cost.
+
+
+    PERFORM bdc_field       USING lv_qty  " set quantity
+                             lv_qty_value.
+    PERFORM bdc_field       USING lv_cost " set cost
+                             lv_cost_value.
+
+
+    lv_index = lv_index + 1.
+
+  ENDLOOP.
+
+*  PERFORM bdc_dynpro      USING 'SAPMV13A' '0201'.
+*  PERFORM bdc_field       USING 'BDC_CURSOR'
+*                                'KONP-KPEIN(04)'.
+*  PERFORM bdc_field       USING 'BDC_OKCODE'
+*                                '/00'.
+
+  " back to scale supplement screen
+  PERFORM bdc_dynpro      USING 'SAPMV13A' '0303'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'KONM-KSTBM(01)'. " check
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=BACK'.
+
+
+  " back to Purchase Organization screen.
+  PERFORM bdc_dynpro      USING 'SAPMV13A' '0201'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'RV13A-DATAB'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=BACK'.
+
+  " enter to Texts screen
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0102'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EINE-APLFZ'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=TEXT'.
+
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0103'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'NAME3'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=LANG'.
+  PERFORM bdc_field       USING 'RM06I-SELKZ(01)'
+                                'X'.
+
+  PERFORM bdc_dynpro      USING 'SAPLSTXX' '1100'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'RSTXT-TXLINE(08)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=TXBA'.
+
+
+* Save Notes
+  CLEAR lv_str_len .
+  CLEAR lv_index.
+
+  IF notes IS NOT INITIAL.
+    lv_str_len = strlen( notes ) .
+
+    IF lv_str_len GT 72.
+
+      CALL FUNCTION 'G_SPLIT_LINE'
+        EXPORTING
+          input_line   = notes
+        TABLES
+          export_lines = lt_split_tab.
+      LOOP AT lt_split_tab.
+        CLEAR lv_line.
+        lv_line = lt_split_tab.
+        lv_index = sy-tabix + 1.
+        IF lv_index < 10.
+          CONCATENATE 'RSTXT-TXLINE(0' lv_index ')' INTO lv_text_field.
+        ELSE.
+          CONCATENATE 'RSTXT-TXLINE(' lv_index ')' INTO lv_text_field.
+        ENDIF.
+        PERFORM bdc_field       USING lv_text_field
+                                      lv_line.
+      ENDLOOP.
+
+    ELSE.
+      PERFORM bdc_field       USING 'RSTXT-TXLINE(02)'
+                                    notes.
+    ENDIF.
+  ENDIF.
+
+
+  PERFORM bdc_dynpro      USING 'SAPMM06I' '0103'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'RM06I-LTEX1(01)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=BU'.
+
+*  " call bdc session
+  PERFORM bdc_transaction TABLES messtab
+  USING                         'ME11'
+                                ctu
+                                mode
+                                update.
+
+  IF sy-subrc <> 0.
+    subrc = sy-subrc. " send code if failed
+    EXIT.
+  ENDIF.
+
+  PERFORM close_group USING     ctu.
+
+
+ENDFUNCTION.
