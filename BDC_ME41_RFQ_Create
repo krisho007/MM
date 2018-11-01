@@ -1,0 +1,162 @@
+FUNCTION z_rfq_create_rfq.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     VALUE(I_PART_NUMBER) TYPE  ZMRFQ_PART_NO
+*"     VALUE(I_SUPPLIER) TYPE  ZMRFQ_SUPP
+*"     VALUE(I_GROUP) LIKE  APQI-GROUPID OPTIONAL
+*"     VALUE(I_USER) LIKE  APQI-USERID OPTIONAL
+*"     VALUE(I_KEEP) LIKE  APQI-QERASE OPTIONAL
+*"     VALUE(I_HOLDDATE) LIKE  APQI-STARTDATE OPTIONAL
+*"     VALUE(I_PLANT) TYPE  WERKS_D
+*"  EXPORTING
+*"     VALUE(SUBRC) LIKE  SYST-SUBRC
+*"  TABLES
+*"      MESSTAB STRUCTURE  BDCMSGCOLL OPTIONAL
+*"----------------------------------------------------------------------
+* This method is used to create RFQ(ME41) using BDC
+* upon successful creation, it will return RFQ Number in the messtab
+*"----------------------------------------------------------------------
+  DATA: lv_today TYPE datum,
+        lv_end_date type datum,
+        lv_date  TYPE datum,
+        lv_date_text(10) TYPE c,
+        lv_day TYPE week_day.
+  lv_today = sy-datum.
+
+  subrc = 0.
+  PERFORM bdc_nodata      USING '/'.
+  PERFORM open_group      USING i_group i_user i_keep i_holddate 'X'.
+
+  " First screen for ME41
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0300'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EKKO-ANGDT'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=KOPF'.
+    " set current date into mm/dd/yyyy format
+  CONCATENATE sy-datum+4(2) '/' sy-datum+6(2) '/' sy-datum(4) INTO lv_date_text.
+
+  PERFORM bdc_field       USING 'RM06E-ANFDT'
+                                lv_date_text.
+
+  " add 8 weeks to the current date to make deadline date for RFQ
+  lv_date = lv_today + 56.
+  " check the date calculated is the weekend if yes, then move to next monday
+  CALL FUNCTION 'DATE_TO_DAY'
+    EXPORTING
+      date    = lv_date
+    IMPORTING
+      weekday = lv_day.
+  IF lv_day(3) EQ 'Sat'.
+    lv_date = lv_date + 2.
+  ELSEIF lv_day(3) EQ 'Sun'.
+    lv_date = lv_date + 1.
+  ENDIF.
+  
+  PERFORM bdc_field       USING 'RM06E-ASART'
+                                'AN'.
+  PERFORM bdc_field       USING 'EKKO-SPRAS'
+                                'EN'.
+        " set current date into mm/dd/yyyy format
+  CONCATENATE lv_date+4(2) '/' lv_date+6(2) '/' lv_date(4) INTO lv_date_text.
+
+  PERFORM bdc_field       USING 'EKKO-ANGDT'
+                                lv_date_text.
+  PERFORM bdc_field       USING 'EKKO-EKORG'
+                                '1000'.
+  perform bdc_field       using 'EKKO-EKGRP'
+                                '999'.
+  PERFORM bdc_field       USING 'RM06E-LPEIN'
+                                 'T'.
+  PERFORM bdc_field       USING 'RM06E-WERKS'
+                                I_PLANT.
+
+  " Validate date screen
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0301'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EKKO-KDATE'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=AB'.
+  PERFORM bdc_field       USING 'EKKO-EKGRP'
+                                '999'.
+
+    " set current date into mm/dd/yyyy format
+  CONCATENATE sy-datum+4(2) '/' sy-datum+6(2) '/' sy-datum(4) INTO lv_date_text.
+  PERFORM bdc_field       USING 'EKKO-KDATB'
+                                 lv_date_text.
+
+
+  " set validity end date = current date + 60
+  lv_end_date = sy-datum + 60.
+  CONCATENATE lv_end_date+4(2) '/' lv_end_date+6(2) '/' lv_end_date(4) INTO lv_date_text.
+
+  PERFORM bdc_field       USING 'EKKO-KDATE'
+                                lv_date_text.
+
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0320'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'RM06E-EEIND(01)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '/00'.
+  PERFORM bdc_field       USING 'EKPO-EMATN(01)'
+                                i_part_number. " part number
+  PERFORM bdc_field       USING 'RM06E-ANMNG(01)'
+                                '             1.00'.
+  " delivery date = deadline date plus 1 day
+  lv_date = lv_date + 1.
+  CALL FUNCTION 'DATE_TO_DAY'
+    EXPORTING
+      date    = lv_date
+    IMPORTING
+      weekday = lv_day.
+  IF lv_day(3) EQ 'Sat'.
+    lv_date = lv_date + 2.
+  ELSEIF lv_day(3) EQ 'Sun'.
+    lv_date = lv_date + 1.
+  ENDIF.
+      " set current date into mm/dd/yyyy format
+  CONCATENATE lv_date+4(2) '/' lv_date+6(2) '/' lv_date(4) INTO lv_date_text.
+
+" set delivery date
+  PERFORM bdc_field       USING 'RM06E-EEIND(01)'
+                                lv_date_text.
+  " enter supplier info
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0320'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'RM06E-EEIND(01)'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=LS'.
+*  PERFORM bdc_field       USING 'RM06E-EBELP'
+*                                '10'.
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0140'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EKKO-LIFNR'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '/00'.
+  PERFORM bdc_field       USING 'EKKO-LIFNR'
+                                i_supplier. " supplier#
+
+  " Save RFQ
+  PERFORM bdc_dynpro      USING 'SAPMM06E' '0140'.
+  PERFORM bdc_field       USING 'BDC_CURSOR'
+                                'EKKO-LIFNR'.
+  PERFORM bdc_field       USING 'BDC_OKCODE'
+                                '=BU'.
+  PERFORM bdc_field       USING 'EKKO-LIFNR'
+                                i_supplier. " supplier#
+
+  " run BDC in the background
+  PERFORM bdc_transaction TABLES messtab
+  USING                         'ME41'
+                                'X'
+                                'N'
+                                'L'.
+  IF sy-subrc <> 0.
+    subrc = sy-subrc.
+    EXIT.
+  ENDIF.
+
+  PERFORM close_group USING     'X'.
+
+ENDFUNCTION.
